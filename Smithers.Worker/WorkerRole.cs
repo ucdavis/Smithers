@@ -8,18 +8,26 @@ namespace Smithers.Worker
 {
     public class WorkerRole : RoleEntryPoint
     {
+        private ILog _roleLogger;
         public override void Run()
         {
-            var logger = LogManager.GetCurrentClassLogger();
             var cancelSource = new CancellationTokenSource();
-            
-            logger.Info("Starting worker role");
+            _roleLogger.Info("Starting worker role");
             
             cancelSource.Token.WaitHandle.WaitOne();
         }
 
+        public override void OnStop()
+        {
+            _roleLogger.Info("Worker Role Exiting");
+
+            base.OnStop();
+        }
+
         public override bool OnStart()
         {
+            _roleLogger = LogManager.GetCurrentClassLogger();
+
             // Set the maximum number of concurrent connections 
             ServicePointManager.DefaultConnectionLimit = 12;
 

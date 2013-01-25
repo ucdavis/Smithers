@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading;
 using Common.Logging;
 using Microsoft.WindowsAzure.ServiceRuntime;
+using Smithers.Worker.Jobs;
 
 namespace Smithers.Worker
 {
@@ -14,6 +15,8 @@ namespace Smithers.Worker
             var cancelSource = new CancellationTokenSource();
             _roleLogger.Info("Starting worker role");
             
+            SampleJob.Schedule();
+
             cancelSource.Token.WaitHandle.WaitOne();
         }
 

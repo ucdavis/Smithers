@@ -1,8 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ServiceDefinition name="Smithers" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2012-10.1.8">
-  <WorkerRole name="Smithers.Worker" vmsize="Small">
+  <WorkerRole name="Smithers.Worker" vmsize="ExtraSmall">
     <Imports>
       <Import moduleName="Diagnostics" />
     </Imports>
+    <ConfigurationSettings>
+      <Setting name="SmithersStorage" />
+    </ConfigurationSettings>
   </WorkerRole>
 </ServiceDefinition>

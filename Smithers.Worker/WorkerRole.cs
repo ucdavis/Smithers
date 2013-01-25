@@ -1,13 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Threading;
-using Microsoft.WindowsAzure;
-using Microsoft.WindowsAzure.Diagnostics;
+using Common.Logging;
 using Microsoft.WindowsAzure.ServiceRuntime;
-using Microsoft.WindowsAzure.StorageClient;
 
 namespace Smithers.Worker
 {
@@ -15,9 +10,10 @@ namespace Smithers.Worker
     {
         public override void Run()
         {
+            var logger = LogManager.GetCurrentClassLogger();
             var cancelSource = new CancellationTokenSource();
             
-            Trace.WriteLine("Smithers.Worker entry point called", "Information");
+            logger.Info("Starting worker role");
             
             cancelSource.Token.WaitHandle.WaitOne();
         }

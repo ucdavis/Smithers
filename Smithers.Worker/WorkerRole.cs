@@ -15,14 +15,11 @@ namespace Smithers.Worker
     {
         public override void Run()
         {
-            // This is a sample worker implementation. Replace with your logic.
+            var cancelSource = new CancellationTokenSource();
+            
             Trace.WriteLine("Smithers.Worker entry point called", "Information");
-
-            while (true)
-            {
-                Thread.Sleep(10000);
-                Trace.WriteLine("Working", "Information");
-            }
+            
+            cancelSource.Token.WaitHandle.WaitOne();
         }
 
         public override bool OnStart()

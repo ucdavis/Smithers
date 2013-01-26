@@ -1,9 +1,13 @@
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using Common.Logging;
+using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.ServiceRuntime;
+using Microsoft.WindowsAzure.Storage.Table;
 using Smithers.Worker.Jobs;
+using CloudStorageAccount = Microsoft.WindowsAzure.Storage.CloudStorageAccount;
 
 namespace Smithers.Worker
 {
@@ -14,10 +18,24 @@ namespace Smithers.Worker
         {
             var cancelSource = new CancellationTokenSource();
             _roleLogger.Info("Starting worker role");
-            
+
+            StartWeb();
             SampleJob.Schedule();
 
             cancelSource.Token.WaitHandle.WaitOne();
+        }
+
+        private void StartWeb()
+        {
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("SmithersStorage"));
+
+            // Create the table client.
+            CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference("LogEntries");
+
+            var query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "2013-01"));
+            var res = table.ExecuteQuery(query);
+            var num = res.Count();
         }
 
         public override void OnStop()

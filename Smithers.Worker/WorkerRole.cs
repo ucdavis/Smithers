@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -8,12 +9,15 @@ using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage.Table;
 using Smithers.Worker.Jobs;
 using CloudStorageAccount = Microsoft.WindowsAzure.Storage.CloudStorageAccount;
+using Nancy.Hosting.Self;
 
 namespace Smithers.Worker
 {
     public class WorkerRole : RoleEntryPoint
     {
         private ILog _roleLogger;
+        private NancyHost _host;
+
         public override void Run()
         {
             var cancelSource = new CancellationTokenSource();
@@ -27,20 +31,14 @@ namespace Smithers.Worker
 
         private void StartWeb()
         {
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("SmithersStorage"));
-
-            // Create the table client.
-            CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
-            CloudTable table = tableClient.GetTableReference("LogEntries");
-
-            var query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "2013-01"));
-            var res = table.ExecuteQuery(query);
-            var num = res.Count();
+            _host = new NancyHost(new Uri("http://localhost:62222"));
+            _host.Start();
         }
 
         public override void OnStop()
         {
             _roleLogger.Info("Worker Role Exiting");
+            _host.Stop();
 
             base.OnStop();
         }

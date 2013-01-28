@@ -8,6 +8,10 @@
       <Setting name="SmithersStorage" />
       <Setting name="WebUrl" />
     </ConfigurationSettings>
-    <Runtime executionContext="elevated"></Runtime>
+    <Runtime executionContext="elevated">
+    </Runtime>
+    <Endpoints>
+      <InputEndpoint name="Web" protocol="tcp" port="80" />
+    </Endpoints>
   </WorkerRole>
 </ServiceDefinition>

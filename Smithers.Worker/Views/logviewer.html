@@ -100,7 +100,9 @@
                 //Add css to highlight error rows
                 $(".level:contains('ERROR')").parent().addClass("error");
                 
-                MyApp.oTable = $("#table").dataTable();
+                MyApp.oTable = $("#table").dataTable({
+                    "aaSorting": [[0, "desc"]]
+                });
 
                 CreateFilters();
             });

@@ -29,12 +29,13 @@ namespace Smithers.Worker
                                                                                                 now.Month)));
                     var res = table.ExecuteQuery(query);
                     
+                    
                     dynamic model = new ExpandoObject();
                     model.Events = res.Select(
                         logEvent => new LogInfo
                             {
                                 LoggerName = logEvent.Properties["LoggerName"].StringValue,
-                                Timestamp = logEvent.Timestamp.ToLocalTime().ToString("MM/dd/yy H:mm:ss"),
+                                Timestamp = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(logEvent.Timestamp, "Pacific Standard Time").ToString("MM/dd/yy H:mm:ss"),
                                 Message = logEvent.Properties["Message"].StringValue,
                                 RoleInstance = logEvent.Properties["RoleInstance"].StringValue,
                             }).ToList();

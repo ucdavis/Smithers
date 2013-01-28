@@ -45,27 +45,39 @@
             </div>
             
             <!-- Example row of columns -->
-            <div class="row">
-                <table id="table" class="table">
-                    <thead>
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>Logger</th>
-                            <th>Message</th>
-                            <th>Instance</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @Each.Events
-                        <tr>
-                            <td>@!Current.Timestamp</td>
-                            <td>@!Current.LoggerName</td>
-                            <td>@!Current.Message</td>
-                            <td>@!Current.RoleInstance</td>
-                        </tr>
-                        @EndEach
-                    </tbody>
-                </table>
+            <div class="row-fluid">
+                <div class="span2 well">
+                    <h2>Jobs</h2>
+                    <ul id="jobs" class="unstyled">
+                        <li>
+                            <label>
+                                <input type="radio" data-filter="All" name="jobsGroup"> All
+                            </label>
+                        </li>
+                    </ul>
+                </div>
+                <div class="span10">
+                    <table id="table" class="table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Logger</th>
+                                <th>Message</th>
+                                <th>Instance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @Each.Events
+                            <tr>
+                                <td>@!Current.Timestamp</td>
+                                <td>@!Current.LoggerName</td>
+                                <td>@!Current.Message</td>
+                                <td>@!Current.RoleInstance</td>
+                            </tr>
+                            @EndEach
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <hr>
@@ -79,13 +91,43 @@
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>        
         <script src="//ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>
         <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js"></script>
-
+        
         <script type="text/javascript">
-            $(function () {
-                $("#table").dataTable({
-                    "aaSorting": [[0, "desc"]]
+            MyApp = {};
+            MyApp.Jobs = [];
+
+            $(function() {
+                MyApp.oTable = $("#table").dataTable();
+
+                CreateFilters();
+            });
+
+            function CreateFilters() {
+                var jobs = MyApp.oTable._('tr');
+                $.each(jobs, function (key, val) {
+                    var job = val[1];
+
+                    if ($.inArray(job, MyApp.Jobs) === -1) {
+                        MyApp.Jobs.push(job);
+                    }
                 });
-            })
+
+                var $jobs = $("#jobs");
+
+                $.each(MyApp.Jobs, function (key, val) {
+                    $jobs.append('<li><label><input type="radio" data-filter="' + val + '" name="jobsGroup"> ' + val + '</label></li>');
+                });
+
+                $("#jobs").on("click", "input", function (e) {
+                    var job = $(this).attr("data-filter");
+
+                    if (job === "All") {
+                        job = "";
+                    }
+
+                    MyApp.oTable.fnFilter(job, 1);
+                });
+            }
         </script>
     </body>
 </html>

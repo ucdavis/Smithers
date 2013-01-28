@@ -2,11 +2,7 @@
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Nancy;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Smithers.Worker
 {
@@ -26,7 +22,7 @@ namespace Smithers.Worker
                     var res = table.ExecuteQuery(query);
                     var num = res.Count();
 
-                    return "Hello World " + num;
+                    return View["logviewer.html"];
                 };
         }
     }

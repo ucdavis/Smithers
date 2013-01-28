@@ -24,13 +24,15 @@ namespace Smithers.Worker
             _roleLogger.Info("Starting worker role");
 
             StartWeb();
-            SampleJob.Schedule();
+            //SampleJob.Schedule();
 
             cancelSource.Token.WaitHandle.WaitOne();
         }
 
         private void StartWeb()
         {
+            _roleLogger.Info("Starting Web Server");
+
             _host = new NancyHost(new Uri("http://localhost:62222"));
             _host.Start();
         }

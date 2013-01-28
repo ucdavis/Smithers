@@ -1,4 +1,5 @@
-﻿using Common.Logging;
+﻿using System;
+using Common.Logging;
 using Quartz;
 
 namespace Smithers.Worker.Jobs
@@ -15,8 +16,18 @@ namespace Smithers.Worker.Jobs
         public void Execute(IJobExecutionContext context)
         {
             Logger.Info("Job Starting");
-            ExecuteJob(context);
-            Logger.Info("Job Completed");
+            
+            try
+            {
+                ExecuteJob(context);
+
+                Logger.Info("Job Completed");
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorFormat("Error: Job failed at {0} with exception {1} {2}", ex.Source, ex.Message,
+                                   ex.StackTrace);
+            }
         }
 
         public abstract void ExecuteJob(IJobExecutionContext context);

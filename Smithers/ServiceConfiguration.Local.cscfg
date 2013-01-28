@@ -5,6 +5,7 @@
     <ConfigurationSettings>
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
       <Setting name="SmithersStorage" value="UseDevelopmentStorage=true" />
+      <Setting name="WebUrl" value="http://localhost:62222" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

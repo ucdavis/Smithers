@@ -33,7 +33,7 @@ namespace Smithers.Worker
         {
             _roleLogger.Info("Starting Web Server");
 
-            _host = new NancyHost(new Uri("http://localhost:62222"));
+            _host = new NancyHost(new Uri(CloudConfigurationManager.GetSetting("WebUrl")));
             _host.Start();
         }
 

@@ -115,6 +115,11 @@
                 var $jobs = $("#jobs");
 
                 $.each(MyApp.Jobs, function (key, val) {
+                    var decimalIndex = val.lastIndexOf('.');
+                    if (decimalIndex) {
+                        val = val.slice(decimalIndex + 1);
+                    }
+
                     $jobs.append('<li><label><input type="radio" data-filter="' + val + '" name="jobsGroup"> ' + val + '</label></li>');
                 });
 

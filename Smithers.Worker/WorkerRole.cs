@@ -20,7 +20,7 @@ namespace Smithers.Worker
             _roleLogger.Info("Starting worker role");
 
             StartWeb();
-            //SampleJob.Schedule();
+            SampleJob.Schedule();
 
             cancelSource.Token.WaitHandle.WaitOne();
         }

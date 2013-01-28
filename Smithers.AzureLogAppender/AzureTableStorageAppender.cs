@@ -12,7 +12,7 @@ namespace Smithers.AzureLogAppender
     public class AzureTableStorageAppender : AppenderSkeleton
     {
         public string TableStorageConnectionStringName { get; set; }
-        private LogServiceContext _ctx;
+        private CloudTable _table;
         private string _tableEndpoint;
 
         public override void ActivateOptions()
@@ -22,14 +22,12 @@ namespace Smithers.AzureLogAppender
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting(TableStorageConnectionStringName));
 
             // Create the table client.
-            CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+            var tableClient = storageAccount.CreateCloudTableClient();
+
+            _table = tableClient.GetTableReference("LogEntries");
+            _table.CreateIfNotExists();
 
             _tableEndpoint = storageAccount.TableEndpoint.AbsoluteUri;
-
-            CloudTable table = tableClient.GetTableReference("LogEntries");
-            table.CreateIfNotExists();
-
-            _ctx = new LogServiceContext(tableClient);
         }
 
         protected override void Append(LoggingEvent loggingEvent)
@@ -38,7 +36,7 @@ namespace Smithers.AzureLogAppender
                 {
                     try
                     {
-                        _ctx.Log(new LogEntry
+                        var log = new LogEntry
                             {
                                 RoleInstance = RoleEnvironment.CurrentRoleInstance.Id,
                                 DeploymentId = RoleEnvironment.DeploymentId,
@@ -49,7 +47,10 @@ namespace Smithers.AzureLogAppender
                                 Domain = loggingEvent.Domain,
                                 ThreadName = loggingEvent.ThreadName,
                                 Identity = loggingEvent.Identity
-                            });
+                            };
+
+                        TableOperation insertOperation = TableOperation.Insert(log);
+                        _table.Execute(insertOperation);
                     }
                     catch (DataServiceRequestException e)
                     {

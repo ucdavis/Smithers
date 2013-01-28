@@ -8,5 +8,6 @@
       <Setting name="SmithersStorage" />
       <Setting name="WebUrl" />
     </ConfigurationSettings>
+    <Runtime executionContext="elevated"></Runtime>
   </WorkerRole>
 </ServiceDefinition>

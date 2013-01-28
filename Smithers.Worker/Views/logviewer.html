@@ -43,25 +43,27 @@
                 <h1>Worker For Scheduled Tasks</h1>
                 <p><a href="https://github.com/ucdavis/Smithers">Helpful Worker Service For Accomplishing Scheduled and Repetitive Tasks</a></p>
             </div>
-
+            
             <!-- Example row of columns -->
             <div class="row">
                 <table id="table" class="table">
                     <thead>
                         <tr>
-                            <th>Logger</th>
                             <th>Timestamp</th>
+                            <th>Logger</th>
                             <th>Message</th>
                             <th>Instance</th>
                         </tr>
                     </thead>
                     <tbody>
+                        @Each.Events
                         <tr>
-                            <td>Something</td>
-                            <td>Something</td>
-                            <td>Something</td>
-                            <td>Something</td>
+                            <td>@!Current.Timestamp</td>
+                            <td>@!Current.LoggerName</td>
+                            <td>@!Current.Message</td>
+                            <td>@!Current.RoleInstance</td>
                         </tr>
+                        @EndEach
                     </tbody>
                 </table>
             </div>

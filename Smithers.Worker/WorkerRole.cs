@@ -1,15 +1,11 @@
 using System;
-using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using Common.Logging;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.ServiceRuntime;
-using Microsoft.WindowsAzure.Storage.Table;
-using Smithers.Worker.Jobs;
-using CloudStorageAccount = Microsoft.WindowsAzure.Storage.CloudStorageAccount;
 using Nancy.Hosting.Self;
+using Smithers.Worker.Jobs;
 
 namespace Smithers.Worker
 {
@@ -24,7 +20,7 @@ namespace Smithers.Worker
             _roleLogger.Info("Starting worker role");
 
             StartWeb();
-            //SampleJob.Schedule();
+            SampleJob.Schedule();
 
             cancelSource.Token.WaitHandle.WaitOne();
         }

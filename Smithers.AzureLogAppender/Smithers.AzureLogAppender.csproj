@@ -67,7 +67,6 @@
   <ItemGroup>
     <Compile Include="AzureTableStorageAppender.cs" />
     <Compile Include="LogEntry.cs" />
-    <Compile Include="LogServiceContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

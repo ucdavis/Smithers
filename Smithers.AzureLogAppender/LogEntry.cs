@@ -15,11 +15,11 @@ limitations under the License.
  */
 
 using System;
-using Microsoft.WindowsAzure.Storage.Table.DataServices;
+using Microsoft.WindowsAzure.Storage.Table;
 
 namespace Smithers.AzureLogAppender
 {
-    public sealed class LogEntry : TableServiceEntity
+    public sealed class LogEntry : TableEntity
     {
         public LogEntry()
         {

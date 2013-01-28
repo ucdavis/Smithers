@@ -6,6 +6,7 @@
     </Imports>
     <ConfigurationSettings>
       <Setting name="SmithersStorage" />
+      <Setting name="WebUrl" />
     </ConfigurationSettings>
   </WorkerRole>
 </ServiceDefinition>

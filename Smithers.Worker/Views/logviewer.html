@@ -63,7 +63,7 @@
                                 <th>Timestamp</th>
                                 <th>Logger</th>
                                 <th>Message</th>
-                                <th>Instance</th>
+                                <th>Level</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -72,7 +72,7 @@
                                 <td>@!Current.Timestamp</td>
                                 <td>@!Current.LoggerName</td>
                                 <td>@!Current.Message</td>
-                                <td>@!Current.RoleInstance</td>
+                                <td class="level">@!Current.Level</td>
                             </tr>
                             @EndEach
                         </tbody>
@@ -97,6 +97,9 @@
             MyApp.Jobs = [];
 
             $(function() {
+                //Add css to highlight error rows
+                $(".level:contains('ERROR')").parent().addClass("error");
+                
                 MyApp.oTable = $("#table").dataTable();
 
                 CreateFilters();

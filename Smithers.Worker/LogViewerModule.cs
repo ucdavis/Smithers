@@ -37,7 +37,7 @@ namespace Smithers.Worker
                                 LoggerName = logEvent.Properties["LoggerName"].StringValue,
                                 Timestamp = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(logEvent.Timestamp, "Pacific Standard Time").ToString("MM/dd/yy H:mm:ss"),
                                 Message = logEvent.Properties["Message"].StringValue,
-                                RoleInstance = logEvent.Properties["RoleInstance"].StringValue,
+                                Level = logEvent.Properties["Level"].StringValue,
                             }).ToList();
 
                     return View["logviewer.html", model];
@@ -50,6 +50,6 @@ namespace Smithers.Worker
         public string LoggerName { get; set; }
         public string Timestamp { get; set; }
         public string Message { get; set; }
-        public string RoleInstance { get; set; }
+        public string Level { get; set; }
     }
 }

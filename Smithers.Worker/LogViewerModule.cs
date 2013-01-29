@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -11,10 +13,24 @@ namespace Smithers.Worker
 {
     public class LogViewerModule : NancyModule
     {
+        private const string CasUrl = "https://cas.ucdavis.edu:8443/cas/";
+        
         public LogViewerModule()
         {
             Get["/"] = _ =>
                 {
+                    var user = GetUser();
+                    
+                    if (string.IsNullOrWhiteSpace(user)) //if user isn't logged in, authenticate
+                    {
+                        return Response.AsRedirect(CasUrl + "login?service=" + Context.Request.Url.SiteBase);
+                    }
+                    
+                    if (!HasAccess(user))
+                    {
+                        return Nancy.HttpStatusCode.Forbidden;
+                    }
+
                     CloudStorageAccount storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("SmithersStorage"));
 
                     // Create the table client.
@@ -52,6 +68,37 @@ namespace Smithers.Worker
 
                     return View["logviewer.html", model];
                 };
+        }
+
+        private bool HasAccess(string user)
+        {
+            var allowed = CloudConfigurationManager.GetSetting("AllowedUsers");
+
+            return true;
+            //return allowed != null && allowed.Split(';').Contains(user);
+        }
+
+        private string GetUser()
+        {
+            // get ticket & service
+            string ticket = Context.Request.Query.ticket;
+            string service = Context.Request.Url.SiteBase;
+
+            // if ticket is defined then we assume they are coming from CAS
+            if (!string.IsNullOrEmpty(ticket))
+            {
+                // validate ticket against cas
+                var sr = new StreamReader(new WebClient().OpenRead(CasUrl + "validate?ticket=" + ticket + "&service=" + service));
+                Context.Request.Query.ticket = null;
+
+                // parse text file
+                if (sr.ReadLine() == "yes")
+                {
+                    return sr.ReadLine();
+                }
+            }
+
+            return string.Empty;
         }
     }
 

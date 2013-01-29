@@ -6,6 +6,7 @@
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
       <Setting name="SmithersStorage" value="UseDevelopmentStorage=true" />
       <Setting name="WebUrl" value="http://localhost:62222" />
+      <Setting name="AllowedUsers" value="postit;anlai;jsylvest;adam;taylorkj" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

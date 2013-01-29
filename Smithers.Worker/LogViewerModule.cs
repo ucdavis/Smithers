@@ -74,8 +74,7 @@ namespace Smithers.Worker
         {
             var allowed = CloudConfigurationManager.GetSetting("AllowedUsers");
 
-            return true;
-            //return allowed != null && allowed.Split(';').Contains(user);
+            return allowed != null && allowed.Split(';').Contains(user);
         }
 
         private string GetUser()

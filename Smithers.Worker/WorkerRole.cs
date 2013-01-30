@@ -5,7 +5,7 @@ using Common.Logging;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Nancy.Hosting.Self;
-using Smithers.Worker.Jobs;
+using Smithers.Worker.Jobs.PrePurchasing;
 
 namespace Smithers.Worker
 {
@@ -20,7 +20,11 @@ namespace Smithers.Worker
             _roleLogger.Info("Starting worker role");
 
             StartWeb();
-            SampleJob.Schedule();
+            
+            //PrePurchasing
+            NightlySync.Schedule();
+            
+            //SampleJob.Schedule();
 
             cancelSource.Token.WaitHandle.WaitOne();
         }

@@ -35,12 +35,12 @@ namespace Smithers.Worker.Jobs
             try
             {
                 var sgMessage = SendGrid.GetInstance();
-                sgMessage.From = new MailAddress("caes-tech@ucdavis.edu", "Smithers Job Notifications");
+                sgMessage.From = new MailAddress("srkirkland@ucdavis.edu", "Smithers Job Notifications");
                 sgMessage.Subject = "Smithers Error Notification";
-                sgMessage.AddTo("caes-tech@ucdavis.edu");
-                sgMessage.Html = string.Format("Error: {0} failed at {1} with exception {2} {3}", jobName, ex.Source,
+                sgMessage.AddTo("caes-dev@ucdavis.edu");
+                sgMessage.Html = string.Format("Error: {0} failed at {1} with exception <strong>{2}</strong><br><br> {3}", jobName, ex.Source,
                                                ex.Message, ex.StackTrace);
-
+                
                 var transport = SMTP.GetInstance(new NetworkCredential(username, pass));
                 transport.Deliver(sgMessage);
             }

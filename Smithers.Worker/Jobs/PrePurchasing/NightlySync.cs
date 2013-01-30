@@ -35,7 +35,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
         {
             var connectionString = CloudConfigurationManager.GetSetting(OppConnectionKey);
 
-            if (connectionString == null)
+            if (string.IsNullOrWhiteSpace(connectionString))
             {
                 Logger.ErrorFormat("Connectiong string not found for key {0}", OppConnectionKey);
                 return;

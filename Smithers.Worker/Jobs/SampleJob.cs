@@ -1,10 +1,5 @@
-﻿using System.Diagnostics;
-using Quartz;
+﻿using Quartz;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Quartz.Impl;
 
 namespace Smithers.Worker.Jobs
@@ -35,6 +30,8 @@ namespace Smithers.Worker.Jobs
         {
             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(2));
             Logger.Info("Job is doing some heavy work here");
+            var zero = 0;
+            var oops = 12/zero;
             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
         }
     }

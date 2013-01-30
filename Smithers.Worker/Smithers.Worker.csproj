@@ -40,6 +40,9 @@
     <Reference Include="Common.Logging.Log4Net">
       <HintPath>..\packages\Common.Logging.Log4Net.2.0.1\lib\net20\Common.Logging.Log4Net.dll</HintPath>
     </Reference>
+    <Reference Include="Dapper">
+      <HintPath>..\packages\Dapper.1.12.1\lib\net40\Dapper.dll</HintPath>
+    </Reference>
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.1.2.10\lib\2.0\log4net.dll</HintPath>
     </Reference>
@@ -87,6 +90,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Jobs\Job.cs" />
+    <Compile Include="Jobs\LoggerExtensions.cs" />
+    <Compile Include="Jobs\PrePurchasing\NightlySync.cs" />
     <Compile Include="Jobs\SampleJob.cs" />
     <Compile Include="LogViewerModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

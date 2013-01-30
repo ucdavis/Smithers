@@ -30,8 +30,6 @@ namespace Smithers.Worker.Jobs
         {
             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(2));
             Logger.Info("Job is doing some heavy work here");
-            var zero = 0;
-            var oops = 12/zero;
             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
         }
     }

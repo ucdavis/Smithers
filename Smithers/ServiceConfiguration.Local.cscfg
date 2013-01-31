@@ -7,6 +7,9 @@
       <Setting name="SmithersStorage" value="UseDevelopmentStorage=true" />
       <Setting name="WebUrl" value="http://localhost:62222" />
       <Setting name="AllowedUsers" value="postit;anlai;jsylvest;adam;taylorkj" />
+      <Setting name="opp-connection" value="" />
+      <Setting name="sendgrid-username" value="ucdotnet" />
+      <Setting name="sendgrid-pass" value="" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

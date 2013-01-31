@@ -8,6 +8,9 @@
       <Setting name="SmithersStorage" />
       <Setting name="WebUrl" />
       <Setting name="AllowedUsers" />
+      <Setting name="opp-connection" />
+      <Setting name="sendgrid-username" />
+      <Setting name="sendgrid-pass" />
     </ConfigurationSettings>
     <Runtime executionContext="elevated">
     </Runtime>

@@ -25,8 +25,7 @@ namespace Smithers.Worker.Jobs
             }
             catch (Exception ex)
             {
-                Logger.ErrorFormat("Error: Job failed at {0} with exception {1} {2}", ex.Source, ex.Message,
-                                   ex.StackTrace);
+                Logger.LogCustomError(ex);
             }
         }
 

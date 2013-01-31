@@ -10,6 +10,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 {
     /// <summary>
     /// Run nightly database sync jobs at 4AM
+    /// TODO: change back to 4AM once jobs on prepurchasing are turned off
     /// </summary>
     public class NightlySync : Job<NightlySync>
     {
@@ -23,7 +24,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             // create trigger
             var nightly =
                 TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(
-                    CronScheduleBuilder.DailyAtHourAndMinute(4, 0)).StartNow().Build();
+                    CronScheduleBuilder.DailyAtHourAndMinute(4, 30)).StartNow().Build();
 
             // get reference to scheduler (remote or local) and schedule job
             var sched = StdSchedulerFactory.GetDefaultScheduler();

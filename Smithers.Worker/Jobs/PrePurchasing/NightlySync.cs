@@ -24,7 +24,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             // create trigger
             var nightly =
                 TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(
-                    CronScheduleBuilder.DailyAtHourAndMinute(4, 30)).StartNow().Build();
+                    CronScheduleBuilder.DailyAtHourAndMinute(3, 30)).StartNow().Build();
 
             // get reference to scheduler (remote or local) and schedule job
             var sched = StdSchedulerFactory.GetDefaultScheduler();
@@ -49,7 +49,8 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             {
                 try
                 {
-                    connection.Execute("usp_ProcessOrgDescendants", commandType: CommandType.StoredProcedure, commandTimeout: 300);
+                    var rows = connection.Execute("usp_ProcessOrgDescendants", commandType: CommandType.StoredProcedure, commandTimeout: 300);
+                    Logger.Info(string.Format("{0} rows affected", rows));
                 }
                 catch (Exception ex)
                 {
@@ -58,7 +59,8 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
                 try
                 {
-                    connection.Execute("usp_SyncWorkgroupAccounts", commandType: CommandType.StoredProcedure, commandTimeout: 300);
+                    var rows = connection.Execute("usp_SyncWorkgroupAccounts", commandType: CommandType.StoredProcedure, commandTimeout: 300);
+                    Logger.Info(string.Format("{0} rows affected", rows));
                 }
                 catch (Exception ex)
                 {

@@ -96,6 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Jobs\Job.cs" />
+    <Compile Include="Jobs\JobExtensions.cs" />
     <Compile Include="Jobs\LoggerExtensions.cs" />
     <Compile Include="Jobs\PrePurchasing\NightlySync.cs" />
     <Compile Include="Jobs\SampleJob.cs" />

@@ -24,7 +24,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             // create trigger
             var nightly =
                 TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(
-                    CronScheduleBuilder.DailyAtHourAndMinute(3, 30)).StartNow().Build();
+                    CronScheduleBuilder.DailyAtHourAndMinute(3, 30).InPacificTimeZone()).StartNow().Build();
 
             // get reference to scheduler (remote or local) and schedule job
             var sched = StdSchedulerFactory.GetDefaultScheduler();

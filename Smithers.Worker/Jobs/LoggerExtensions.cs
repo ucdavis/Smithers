@@ -29,7 +29,7 @@ namespace Smithers.Worker.Jobs
 
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(pass))
             {
-                log.Error("Could not send email notification. Can username or password");
+                log.Error("Could not send email notification. Check username or password settings");
             }
 
             try

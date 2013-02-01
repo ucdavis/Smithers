@@ -50,7 +50,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 try
                 {
                     var rows = connection.Execute("usp_ProcessOrgDescendants", commandType: CommandType.StoredProcedure, commandTimeout: 300);
-                    Logger.Info(string.Format("{0} rows affected", rows));
+                    Logger.Info(string.Format("usp_ProcessOrgDescendants: {0} rows affected", rows));
                 }
                 catch (Exception ex)
                 {
@@ -60,7 +60,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 try
                 {
                     var rows = connection.Execute("usp_SyncWorkgroupAccounts", commandType: CommandType.StoredProcedure, commandTimeout: 300);
-                    Logger.Info(string.Format("{0} rows affected", rows));
+                    Logger.Info(string.Format("usp_SyncWorkgroupAccounts: {0} rows affected", rows));
                 }
                 catch (Exception ex)
                 {

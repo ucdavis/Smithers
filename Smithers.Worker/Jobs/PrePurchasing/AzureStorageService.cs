@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Web;
 using System.Xml.Linq;
+using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Smithers.Worker.AzureDataAccess;
@@ -22,10 +23,10 @@ namespace Smithers.Worker.Jobs.PrePurchasing
         private readonly string _storageAccountName;
         private readonly string _storageKey;
         private readonly string _storageContainer;
-
+        private readonly string _serviceUrl;    // west coast data center
+        
         private readonly int _cleanupThreshold;
 
-        private const string ServiceUrl = @"https://by1prod-dacsvc.azure.com/DACWebService.svc/{0}";    // west coast data center
         private const string StatusParameters = @"?servername={0}&username={1}&password={2}&reqId={3}";
         private const string CloudStorageconnectionString = @"DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}";
         private const string ConnString = @"Server=tcp:{0};Database={1};User ID={2};Password={3};Trusted_Connection=False;";
@@ -43,6 +44,8 @@ namespace Smithers.Worker.Jobs.PrePurchasing
         /// <param name="cleanupThreshold"># of days to before clearing out old backups</param>
         public AzureStorageService(string serverName, string sqlUsername, string sqlPassword, string storageAccountName, string storageKey, string storageContainer, string storageUrl = null, int cleanupThreshold = -4)
         {
+            _serviceUrl = CloudConfigurationManager.GetSetting("AzureDACServiceUrl");
+            
             _serverName = serverName;
             _sqlUsername = sqlUsername;
             _sqlPassword = sqlPassword;
@@ -77,14 +80,16 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             filename = string.Format("{0}-{1}-{2}-{3}-{4}-{5}.bacpac", database, time.Year, time.Month, time.Day, time.Hour, time.Minute);
             var credentials = new BlobStorageAccessKeyCredentials() { StorageAccessKey = _storageKey, Uri = StorageUrl + filename };
 
-            var connectionInfo = new ConnectionInfo();
-            connectionInfo.ServerName = _serverName;
-            connectionInfo.DatabaseName = database;
-            connectionInfo.UserName = _sqlUsername;
-            connectionInfo.Password = _sqlPassword;
+            var connectionInfo = new ConnectionInfo
+                {
+                    ServerName = _serverName,
+                    DatabaseName = database,
+                    UserName = _sqlUsername,
+                    Password = _sqlPassword
+                };
 
             // create the request
-            var request = WebRequest.Create(string.Format(ServiceUrl, tables != null ? "SelectiveExport" : "Export"));
+            var request = WebRequest.Create(_serviceUrl + (tables != null ? "SelectiveExport" : "Export"));
             request.Method = "POST";
             request.ContentType = "application/xml";
             using (var stream = request.GetRequestStream())
@@ -403,7 +408,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
         /// <returns></returns>
         public string GetStatus(string requestId)
         {
-            var url = string.Format(ServiceUrl, "Status") + string.Format(StatusParameters, _serverName, _sqlUsername, _sqlPassword, requestId);
+            var url = string.Format(_serviceUrl, "Status") + string.Format(StatusParameters, _serverName, _sqlUsername, _sqlPassword, requestId);
 
             var result = XDocument.Load(url);
 

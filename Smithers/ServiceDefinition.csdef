@@ -11,6 +11,7 @@
       <Setting name="opp-connection" />
       <Setting name="sendgrid-username" />
       <Setting name="sendgrid-pass" />
+      <Setting name="AzureDACServiceUrl" />
     </ConfigurationSettings>
     <Runtime executionContext="elevated">
     </Runtime>

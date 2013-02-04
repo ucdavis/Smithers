@@ -18,7 +18,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             var nightly =
                 TriggerBuilder.Create()
                               .ForJob(jobDetails)
-                              .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(1, 0).InPacificTimeZone())
+                              .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(1, 30).InPacificTimeZone())
                               .StartNow()
                               .Build();
 

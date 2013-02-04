@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="858ec160-9768-44e1-a7a4-52db1e382816" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>false</GenerateAsynchronousMethods>
+    <GenerateTaskBasedAsynchronousMethod>true</GenerateTaskBasedAsynchronousMethod>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings />
+    <GenerateSerializableTypes>true</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <UseSerializerForFaults>true</UseSerializerForFaults>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="https://by1prod-dacsvc.azure.com/DACWebService.svc/mex" Protocol="mex" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="service.wsdl" MetadataType="Wsdl" ID="ef333d21-4cac-40cc-a396-2befb82916cb" SourceId="1" SourceUrl="https://by1prod-dacsvc.azure.com/DACWebService.svc/mex" />
+    <MetadataFile FileName="Microsoft.SqlServer.Management.Dac.Services.wsdl" MetadataType="Wsdl" ID="996d6398-6840-434f-8ca0-83d68b605e20" SourceId="1" SourceUrl="https://by1prod-dacsvc.azure.com/DACWebService.svc/mex" />
+    <MetadataFile FileName="service.xsd" MetadataType="Schema" ID="f2ecf51e-0768-415d-b3f4-395d8fdf3d59" SourceId="1" SourceUrl="https://by1prod-dacsvc.azure.com/DACWebService.svc/mex" />
+    <MetadataFile FileName="service1.xsd" MetadataType="Schema" ID="2789920c-1b54-4a38-afb8-e842f0d011b3" SourceId="1" SourceUrl="https://by1prod-dacsvc.azure.com/DACWebService.svc/mex" />
+    <MetadataFile FileName="Microsoft.SqlServer.Management.Dac.ServiceTypes.xsd" MetadataType="Schema" ID="334bf3f1-bf33-4e41-b56c-9bfc8b246ad6" SourceId="1" SourceUrl="https://by1prod-dacsvc.azure.com/DACWebService.svc/mex" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>

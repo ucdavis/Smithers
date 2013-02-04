@@ -29,8 +29,17 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             var storageKey = context.MergedJobDataMap["storageKey"] as string;
             var blobContainer = context.MergedJobDataMap["blobContainer"] as string;
 
-            var sendGridUserName = context.MergedJobDataMap["sendGridUser"] as string;
-            var sendGridPassword = context.MergedJobDataMap["sendGridPassword"] as string;
+            // initialize the service
+            var azureService = new AzureStorageService(serverName, username, password, storageAccountName, storageKey, blobContainer);
+
+            // make the commands for backup
+            string filename;
+            var reqId = azureService.BackupDataSync("PrePurchasing", out filename);
+
+            Logger.InfoFormat("PrePurchasing database backup completed w/ requestId {0} and filename {1}", reqId, filename);
+            
+            // clean up the blob
+            azureService.BlobCleanup();
         }
     }
 }

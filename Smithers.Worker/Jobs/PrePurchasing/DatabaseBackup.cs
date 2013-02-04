@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.WindowsAzure;
 using Quartz;
 using Quartz.Impl;
 
@@ -14,7 +15,13 @@ namespace Smithers.Worker.Jobs.PrePurchasing
         {
             var jobDetails = JobBuilder.Create<DatabaseBackup>().Build();
 
-            var nightly = TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(1, 0)).StartNow().Build();
+            var nightly =
+                TriggerBuilder.Create()
+                              .ForJob(jobDetails)
+                              .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(1, 0).InPacificTimeZone())
+                              .StartNow()
+                              .Build();
+
             var sched = StdSchedulerFactory.GetDefaultScheduler();
             sched.ScheduleJob(jobDetails, nightly);
             sched.Start();
@@ -22,12 +29,12 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
         public override void ExecuteJob(IJobExecutionContext context)
         {
-            var storageAccountName = context.MergedJobDataMap["storageAccountName"] as string;
-            var serverName = context.MergedJobDataMap["serverName"] as string;
-            var username = context.MergedJobDataMap["username"] as string;
-            var password = context.MergedJobDataMap["password"] as string;
-            var storageKey = context.MergedJobDataMap["storageKey"] as string;
-            var blobContainer = context.MergedJobDataMap["blobContainer"] as string;
+            var storageAccountName = CloudConfigurationManager.GetSetting("opp-AzureStorageAccountName");
+            var serverName = CloudConfigurationManager.GetSetting("opp-AzureServerName");
+            var username = CloudConfigurationManager.GetSetting("opp-AzureUserName");
+            var password = CloudConfigurationManager.GetSetting("opp-AzurePassword");
+            var storageKey = CloudConfigurationManager.GetSetting("opp-AzureStorageKey");
+            var blobContainer = CloudConfigurationManager.GetSetting("opp-AzureBlobContainer");
 
             // initialize the service
             var azureService = new AzureStorageService(serverName, username, password, storageAccountName, storageKey, blobContainer);

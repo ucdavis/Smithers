@@ -26,7 +26,8 @@ namespace Smithers.Worker
             if (RoleEnvironment.IsAvailable && RoleEnvironment.IsEmulated == false)
             {
                 //PrePurchasing
-                NightlySync.Schedule();   
+                NightlySync.Schedule();
+                DatabaseBackup.Schedule();
             }
             else //local debugging
             {

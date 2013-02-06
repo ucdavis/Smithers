@@ -89,7 +89,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 };
 
             // create the request
-            var request = WebRequest.Create(_serviceUrl + (tables != null ? "SelectiveExport" : "Export"));
+            var request = WebRequest.Create(string.Format(_serviceUrl, (tables != null ? "SelectiveExport" : "Export")));
             request.Method = "POST";
             request.ContentType = "application/xml";
             using (var stream = request.GetRequestStream())

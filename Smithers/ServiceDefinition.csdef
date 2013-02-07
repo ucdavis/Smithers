@@ -11,6 +11,13 @@
       <Setting name="opp-connection" />
       <Setting name="sendgrid-username" />
       <Setting name="sendgrid-pass" />
+      <Setting name="AzureDACServiceUrl" />
+      <Setting name="opp-AzureStorageAccountName" />
+      <Setting name="opp-AzureServerName" />
+      <Setting name="opp-AzureUserName" />
+      <Setting name="opp-AzurePassword" />
+      <Setting name="opp-AzureStorageKey" />
+      <Setting name="opp-AzureBlobContainer" />
     </ConfigurationSettings>
     <Runtime executionContext="elevated">
     </Runtime>

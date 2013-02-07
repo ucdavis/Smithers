@@ -10,6 +10,13 @@
       <Setting name="opp-connection" value="" />
       <Setting name="sendgrid-username" value="ucdotnet" />
       <Setting name="sendgrid-pass" value="" />
+      <Setting name="AzureDACServiceUrl" value="https://by1prod-dacsvc.azure.com/DACWebService.svc/{0}" />
+      <Setting name="opp-AzureStorageAccountName" value="" />
+      <Setting name="opp-AzureServerName" value="" />
+      <Setting name="opp-AzureUserName" value="" />
+      <Setting name="opp-AzurePassword" value="" />
+      <Setting name="opp-AzureStorageKey" value="" />
+      <Setting name="opp-AzureBlobContainer" value="" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

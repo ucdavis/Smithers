@@ -15,13 +15,14 @@ namespace Smithers.Worker.Jobs
 
         public void Execute(IJobExecutionContext context)
         {
+            var start = DateTime.Now;
             Logger.Info("Job Starting");
             
             try
             {
                 ExecuteJob(context);
 
-                Logger.Info("Job Completed");
+                Logger.InfoFormat("Job Completed. Elapsed time: {0}", (DateTime.Now - start));
             }
             catch (Exception ex)
             {

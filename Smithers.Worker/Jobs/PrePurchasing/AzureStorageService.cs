@@ -142,6 +142,9 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             var masterDbConnectionString = string.Format(ConnString, _serverName, "master", _sqlUsername, _sqlPassword);
             var tmpDbConnectionString = string.Format(ConnString, _serverName, tmpDatabase, _sqlUsername, _sqlPassword);
 
+            // drop the temp database, the command should run just in case an existing copy is still around
+            CleanupTmp(tmpDatabase, masterDbConnectionString);
+
             // make a copy that we can alter
             CreateCopy(srcDatabase, tmpDatabase, masterDbConnectionString);
 

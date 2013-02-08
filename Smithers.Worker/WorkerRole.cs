@@ -5,6 +5,7 @@ using Common.Logging;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Nancy.Hosting.Self;
+using Quartz.Impl;
 using Smithers.Worker.Jobs;
 using Smithers.Worker.Jobs.PrePurchasing;
 
@@ -14,6 +15,8 @@ namespace Smithers.Worker
     {
         private ILog _roleLogger;
         private NancyHost _host;
+
+        private static readonly TimeSpan MaxExitWaitTime = TimeSpan.FromMinutes(2);
 
         public override void Run()
         {
@@ -48,6 +51,40 @@ namespace Smithers.Worker
             _roleLogger.Info("Worker Role Exiting");
             _host.Stop();
 
+            var scheduler = StdSchedulerFactory.GetDefaultScheduler();
+            var executingJobs = scheduler.GetCurrentlyExecutingJobs();
+
+            if (executingJobs.Count > 0)
+            {
+                //If we have any currently executing jobs, pause new ones from being triggered and wait for them to finish
+                _roleLogger.InfoFormat("Waiting for {0} job(s) to shut down before exiting", executingJobs.Count);
+                scheduler.PauseAll();
+
+                TimeSpan loopDuration = TimeSpan.FromSeconds(20); //check for running jobs every 20 seconds
+                
+                for (TimeSpan time = TimeSpan.FromSeconds(0); time < MaxExitWaitTime; time += loopDuration)
+                {
+                    if (scheduler.GetCurrentlyExecutingJobs().Count == 0)
+                    {
+                        break;
+                    }
+
+                    Thread.Sleep(loopDuration);
+                }
+
+                executingJobs = scheduler.GetCurrentlyExecutingJobs();
+
+                if (executingJobs.Count > 0) //if there are still executing jobs that still haven't finished Azure will shut them down hard
+                {
+                    foreach (var job in executingJobs)
+                    {
+                        var jobLogger = LogManager.GetLogger(job.JobDetail.JobType);
+                        
+                        jobLogger.Error("Job hard shutdown forced by worker role restart");
+                    }
+                }
+            }
+            
             base.OnStop();
         }
 

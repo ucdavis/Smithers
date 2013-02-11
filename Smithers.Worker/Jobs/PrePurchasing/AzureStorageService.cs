@@ -396,7 +396,10 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                     // start the copy job
                     var cmd1 = new SqlCommand();
                     cmd1.Connection = connection;
-                    cmd1.CommandText = string.Format("DROP DATABASE {0};", tmpDatabase);
+                    cmd1.CommandText =
+                        string.Format(
+                            "if exists(select * from sys.databases where name = '{0}') DROP DATABASE {0};",
+                            tmpDatabase);
                     cmd1.ExecuteNonQuery();
 
                     connection.Close();

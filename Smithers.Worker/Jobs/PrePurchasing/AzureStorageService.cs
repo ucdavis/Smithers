@@ -389,20 +389,24 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             // just ensure we don't drop the primary db in any way
             if (tmpDatabase.EndsWith("Backup"))
             {
-                using (var connection = new SqlConnection(masterDbConnectionString))
+                try
                 {
-                    connection.Open();
+                    using (var connection = new SqlConnection(masterDbConnectionString))
+                    {
+                        connection.Open();
 
-                    // start the copy job
-                    var cmd1 = new SqlCommand();
-                    cmd1.Connection = connection;
-                    cmd1.CommandText =
-                        string.Format(
-                            "if exists(select * from sys.databases where name = '{0}') DROP DATABASE {0};",
-                            tmpDatabase);
-                    cmd1.ExecuteNonQuery();
+                        // start the copy job
+                        var cmd1 = new SqlCommand();
+                        cmd1.Connection = connection;
+                        cmd1.CommandText = string.Format("DROP DATABASE {0};", tmpDatabase);
+                        cmd1.ExecuteNonQuery();
 
-                    connection.Close();
+                        connection.Close();
+                    }
+                }
+                catch (SqlException)
+                {
+                    //Swallow SQL exception that results if database doesn't exist
                 }
             }
         }

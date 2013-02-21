@@ -19,6 +19,7 @@
       <Setting name="opp-AzureBlobContainer" value="" />
       <Setting name="opp-sendgrid-username" value="ucdprepurchasing" />
       <Setting name="opp-sendgrid-pass" value="" />
+      <Setting name="opp-send-email" value="Yes" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

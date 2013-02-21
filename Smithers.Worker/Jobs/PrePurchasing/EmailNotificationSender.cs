@@ -44,13 +44,18 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
         public override void ExecuteJob(IJobExecutionContext context)
         {
+            var sendEmail = CloudConfigurationManager.GetSetting("opp-send-email");
+            
+            //Don't execute unless email is turned on
+            if (!string.Equals(sendEmail, "Yes", StringComparison.InvariantCultureIgnoreCase)) return;
+            
             //Setup sendGrid info, so we only look it up once per execution call
             _sendGridUserName = CloudConfigurationManager.GetSetting("opp-sendgrid-username");
             _sendGridPassword = CloudConfigurationManager.GetSetting("opp-sendgrid-pass");
-            
+
             //Setup connection string
             _connectionString = CloudConfigurationManager.GetSetting("opp-connection");
-            
+
             var runType = context.MergedJobDataMap["RunType"] as string;
 
             if (string.Equals(runType, "PerEvent", StringComparison.InvariantCultureIgnoreCase))
@@ -67,12 +72,6 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                     ProcessEmails(EmailPreferences.NotificationTypes.Weekly);
                 }
             }
-        }
-
-        public void FakeEmail()
-        {
-            _connectionString = CloudConfigurationManager.GetSetting("opp-connection");
-            ProcessEmails(EmailPreferences.NotificationTypes.Weekly);
         }
         
         private void ProcessEmails(EmailPreferences.NotificationTypes notificationType)
@@ -199,24 +198,26 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 }
 
                 message.Append(string.Format("<p><em>{0} </em><em><a href=\"{1}\">{2}</a>&nbsp;</em></p>", "You can change your email preferences at any time by", "http://prepurchasing.ucdavis.edu/User/Profile", "updating your profile on the PrePurchasing site"));
+
+                //TODO: only email jason in the test
+                if (string.Equals(email, "jsylvest@ucdavis.edu"))
+                {
+                    var sgMessage = SendGrid.GetInstance();
+                    sgMessage.From = new MailAddress(SendGridFrom, "Smithers OPP Test No Reply");
+
+                    sgMessage.Subject = pendingOrders.Count == 1
+                                            ? string.Format("PrePurchasing Notification for Order #{0}",
+                                                            pendingOrders.Single().RequestNumber)
+                                            : "PrePurchasing Notifications";
+
+                    //sgMessage.AddTo(email);
+                    sgMessage.AddTo("jsylvest@ucdavis.edu");
+                    sgMessage.Html = message.ToString();
+
+                    var transport = SMTP.GetInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
+                    transport.Deliver(sgMessage);   
+                }
                 
-                //TODO: Deliver!!
-                /*
-                var sgMessage = SendGrid.GenerateInstance();
-                sgMessage.From = new MailAddress(SendGridFrom, "UCD PrePurchasing No Reply");
-
-                sgMessage.Subject = pendingOrders.Count == 1
-                                        ? string.Format("PrePurchasing Notification for Order #{0}",
-                                                        pendingOrders.Single().RequestNumber)
-                                        : "PrePurchasing Notifications";
-
-                sgMessage.AddTo(email);
-                sgMessage.Html = message.ToString();
-
-                var transport = SMTP.GenerateInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
-                transport.Deliver(sgMessage);
-                */
-
                 ts.Commit();
             }
         }

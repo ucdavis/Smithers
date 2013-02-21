@@ -68,6 +68,12 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 }
             }
         }
+
+        public void FakeEmail()
+        {
+            _connectionString = CloudConfigurationManager.GetSetting("opp-connection");
+            ProcessEmails(EmailPreferences.NotificationTypes.Weekly);
+        }
         
         private void ProcessEmails(EmailPreferences.NotificationTypes notificationType)
         {
@@ -77,12 +83,12 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             using (connection)
             {
                 List<dynamic> pending = connection.Query(
-                    "select * from EmailQueueV2 where Pending = 1 and NotificationType = @notificationType",
+                    "select UserId, Email, OrderId, DateTimeCreated, Action, Details from EmailQueueV2 where Pending = 1 and NotificationType = @notificationType",
                     new {notificationType = notificationType.ToString()}).ToList();
 
                 var pendingUserIds = pending.Where(x => x.UserId != null).Select(x => x.UserId).Distinct();
 
-                List<dynamic> users = connection.Query("select distinct * from users where id in @ids",
+                List<dynamic> users = connection.Query("select distinct Id, Email from users where id in @ids",
                                                        new {ids = pendingUserIds.ToArray()}).ToList();
 
                 #region Workgroup Notifications have a null User

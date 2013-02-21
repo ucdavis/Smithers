@@ -31,9 +31,11 @@ namespace Smithers.Worker
                 //PrePurchasing
                 NightlySync.Schedule();
                 DatabaseBackup.Schedule();
+                //EmailNotificationSender.Schedule();
             }
             else //local debugging
             {
+                new EmailNotificationSender().FakeEmail();
                 SampleJob.Schedule();    
             }
 

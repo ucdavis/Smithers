@@ -38,7 +38,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
             var sched = StdSchedulerFactory.GetDefaultScheduler();
             sched.ScheduleJob(jobDetails, trigger);
-            sched.ScheduleJob(jobDetails, dailyTrigger);
+            sched.ScheduleJob(dailyTrigger); //note: the job is already attached to the scheduler, so just add an addtl trigger
             sched.Start();
         }
 

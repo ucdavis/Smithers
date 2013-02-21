@@ -128,8 +128,9 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             using (var ts = connection.BeginTransaction())
             {
                 var pendingOrders =
-                    connection.Query(@"select o.Id, o.RequestNumber, o.OrderStatusCodeId, u.FirstName + ' ' + u.LastName as CreatedByFullName
-	                                    ,os.Name as StatusName, wv.Name as VendorName
+                    connection.Query(@"select o.Id, o.RequestNumber, o.OrderStatusCodeId
+                                        ,u.FirstName + ' ' + u.LastName as CreatedByFullName, os.Name as StatusName
+                                        ,wv.Name as VendorName, wv.Line1, wv.City, wv.State, wv.Zip, wv.CountryCode
                                     from Orders o inner join Users u on u.Id = o.CreatedBy 
                                         inner join OrderStatusCodes os on os.Id = o.OrderStatusCodeId
                                         left outer join WorkgroupVendors wv on wv.Id = o.WorkgroupVendorId
@@ -167,7 +168,9 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         string.Format("<tr><td style=\"width: 100px;\"><strong>Vendor:</strong></td><td>{0}</td></tr>",
                                       string.IsNullOrWhiteSpace(order.VendorName)
                                           ? "-- Unspecified --"
-                                          : order.VendorName));
+                                          : string.Format("{0} ({1}, {2}, {3} {4}, {5})", order.VendorNameName,
+                                                          order.Line1, order.City, order.State, order.Zip,
+                                                          order.CountryCode)));
                     
                     message.Append("</tbody>");
                     message.Append("</table>");

@@ -168,7 +168,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         string.Format("<tr><td style=\"width: 100px;\"><strong>Vendor:</strong></td><td>{0}</td></tr>",
                                       string.IsNullOrWhiteSpace(order.VendorName)
                                           ? "-- Unspecified --"
-                                          : string.Format("{0} ({1}, {2}, {3} {4}, {5})", order.VendorNameName,
+                                          : string.Format("{0} ({1}, {2}, {3} {4}, {5})", order.VendorName,
                                                           order.Line1, order.City, order.State, order.Zip,
                                                           order.CountryCode)));
                     

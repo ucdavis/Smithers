@@ -181,7 +181,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         message.Append("<tr>");
                         message.Append(string.Format("<td style=\"padding-left: 7px; border-left-width: 0px; margin-left: 0px; width: 180px;\">{0}</td>", emailQueue.DateTimeCreated));
                         message.Append(string.Format("<td style=\"width: 137px;\">{0}</td>", emailQueue.Action));
-                        message.Append(string.Format("<td >{0}</td>", emailQueue.Details));
+                        message.Append(string.Format("<td >{0}</td>", emailQueue.Details ?? string.Empty));
                         message.Append("</tr>");
 
                         //TODO: update

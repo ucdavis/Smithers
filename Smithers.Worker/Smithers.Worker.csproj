@@ -104,7 +104,6 @@
     <Compile Include="Jobs\PrePurchasing\AzureStorageService.cs" />
     <Compile Include="Jobs\PrePurchasing\DatabaseBackup.cs" />
     <Compile Include="Jobs\PrePurchasing\EmailNotificationSender.cs" />
-    <Compile Include="Jobs\PrePurchasing\EmailPreferences.cs" />
     <Compile Include="Jobs\PrePurchasing\NightlySync.cs" />
     <Compile Include="Jobs\SampleJob.cs" />
     <Compile Include="LogViewerModule.cs" />

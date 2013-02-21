@@ -7,48 +7,70 @@ using System.Net.Mail;
 using System.Text;
 using Dapper;
 using Microsoft.WindowsAzure;
+using Quartz;
+using Quartz.Impl;
 using SendGridMail;
 using SendGridMail.Transport;
 
 namespace Smithers.Worker.Jobs.PrePurchasing
 {
-    public class EmailNotificationSender
+    public class EmailNotificationSender : Job<EmailNotificationSender>
     {
-        private static string _sendGridUserName;
-        private static string _sendGridPassword;
-        private readonly string _connectionString;
+        private string _sendGridUserName;
+        private string _sendGridPassword;
+        private string _connectionString;
         private const string SendGridFrom = "opp-noreply@ucdavis.edu";
 
-        public EmailNotificationSender()
+        public static void Schedule()
         {
+            // create job
+            var jobDetails = JobBuilder.Create<EmailNotificationSender>().Build();
+
+            //run daily trigger every 5 minutes after inital 30 second delay to give priority to warmup
+            var trigger = TriggerBuilder.Create().ForJob(jobDetails).UsingJobData("RunType", "PerEvent")
+                            .WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(5))
+                            .StartAt(DateTimeOffset.Now.AddSeconds(30))
+                            .Build();
+
+            var dailyTrigger = TriggerBuilder.Create().ForJob(jobDetails).UsingJobData("RunType", "Daily")
+                                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(17, 0).InPacificTimeZone())
+                                .StartNow().Build();
+
+            var sched = StdSchedulerFactory.GetDefaultScheduler();
+            sched.ScheduleJob(jobDetails, trigger);
+            sched.ScheduleJob(jobDetails, dailyTrigger);
+            sched.Start();
+        }
+
+        public override void ExecuteJob(IJobExecutionContext context)
+        {
+            //Setup sendGrid info, so we only look it up once per execution call
+            _sendGridUserName = CloudConfigurationManager.GetSetting("opp-sendgrid-username");
+            _sendGridPassword = CloudConfigurationManager.GetSetting("opp-sendgrid-pass");
+            
+            //Setup connection string
             _connectionString = CloudConfigurationManager.GetSetting("opp-connection");
-        }
+            
+            var runType = context.MergedJobDataMap["RunType"] as string;
 
-        public void SendNotifications()
-        {
-            // always trigger per event emails
-            ProcessEmails(EmailPreferences.NotificationTypes.PerEvent);
-        }
-
-        public void SendDailyWeeklyNotifications()
-        {
-            ProcessEmails(EmailPreferences.NotificationTypes.Daily);
-
-            // send weekly summaries
-            if (DateTime.Now.DayOfWeek == DayOfWeek.Friday)
+            if (string.Equals(runType, "PerEvent", StringComparison.InvariantCultureIgnoreCase))
             {
-                ProcessEmails(EmailPreferences.NotificationTypes.Weekly);
+                ProcessEmails(EmailPreferences.NotificationTypes.PerEvent);
+            }
+            else //Daily/Weekly
+            {
+                ProcessEmails(EmailPreferences.NotificationTypes.Daily);
+
+                // send weekly summaries
+                if (DateTime.Now.DayOfWeek == DayOfWeek.Friday)
+                {
+                    ProcessEmails(EmailPreferences.NotificationTypes.Weekly);
+                }
             }
         }
-
-        public void FakeEmailTesting()
-        {
-            ProcessEmails(EmailPreferences.NotificationTypes.Weekly);
-        }
-
+        
         private void ProcessEmails(EmailPreferences.NotificationTypes notificationType)
         {
-            
             var connection = new SqlConnection(_connectionString);
             connection.Open();
 
@@ -73,7 +95,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
                     var email = wEmail;
 
-                    FakeEmail(connection, email, pendingForUser);
+                    BatchEmail(connection, email, pendingForUser);
                 }
 
                 #endregion Workgroup Notifications have a null User
@@ -86,14 +108,14 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
                     var email = user.Email;
 
-                    FakeEmail(connection, email, pendingForUser);
+                    BatchEmail(connection, email, pendingForUser);
                 }
 
                 #endregion Normal Email Notification, user will never be null
             }
         }
 
-        private void FakeEmail(SqlConnection connection, string email, List<dynamic> pendingForUser)
+        private void BatchEmail(SqlConnection connection, string email, List<dynamic> pendingForUser)
         {
             var pendingOrderIds = pendingForUser.Select(x => x.OrderId).Distinct();
 
@@ -196,6 +218,16 @@ namespace Smithers.Worker.Jobs.PrePurchasing
         private string GenerateLink(string orderRequestNumber)
         {
             return string.Format("<a href=\"{0}{1}\">{1}</a>", "http://prepurchasing.ucdavis.edu/Order/Lookup/", orderRequestNumber);
+        }
+    }
+
+    public class EmailPreferences
+    {
+        public enum NotificationTypes
+        {
+            PerEvent,
+            Daily,
+            Weekly
         }
     }
 }

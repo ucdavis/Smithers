@@ -205,9 +205,9 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 var sgMessage = SendGrid.GenerateInstance();
                 sgMessage.From = new MailAddress(SendGridFrom, "UCD PrePurchasing No Reply");
 
-                sgMessage.Subject = orders.Count == 1
+                sgMessage.Subject = pendingOrders.Count == 1
                                         ? string.Format("PrePurchasing Notification for Order #{0}",
-                                                        orders.Single().RequestNumber)
+                                                        pendingOrders.Single().RequestNumber)
                                         : "PrePurchasing Notifications";
 
                 sgMessage.AddTo(email);

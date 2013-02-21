@@ -17,6 +17,8 @@
       <Setting name="opp-AzurePassword" value="" />
       <Setting name="opp-AzureStorageKey" value="" />
       <Setting name="opp-AzureBlobContainer" value="" />
+      <Setting name="opp-sendgrid-username" value="ucdprepurchasing" />
+      <Setting name="opp-sendgrid-pass" value="" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

@@ -52,19 +52,16 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             var connection = new SqlConnection(_connectionString);
             connection.Open();
 
-            List<dynamic> pending, users;
             using (connection)
             {
-                pending =
-                    connection.Query(
-                        "select * from EmailQueueV2 where Pending = 1 and NotificationType = @notificationType",
-                        new {notificationType = notificationType.ToString()}).ToList();
+                List<dynamic> pending = connection.Query(
+                    "select * from EmailQueueV2 where Pending = 1 and NotificationType = @notificationType",
+                    new {notificationType = notificationType.ToString()}).ToList();
 
                 var pendingUserIds = pending.Where(x => x.UserId != null).Select(x => x.UserId).Distinct();
 
-                users =
-                    connection.Query("select distinct * from users where id in @ids",
-                                     new {ids = pendingUserIds.ToArray()}).ToList();
+                List<dynamic> users = connection.Query("select distinct * from users where id in @ids",
+                                                       new {ids = pendingUserIds.ToArray()}).ToList();
 
                 #region Workgroup Notifications have a null User
 
@@ -104,7 +101,12 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             using (var ts = connection.BeginTransaction())
             {
                 var pendingOrders =
-                    connection.Query("select * from orders where id in @ids",
+                    connection.Query(@"select o.Id, o.RequestNumber, o.OrderStatusCodeId, u.FirstName + ' ' + u.LastName as CreatedByFullName
+	                                    ,os.Name as StatusName, wv.Name as VendorName
+                                    from Orders o inner join Users u on u.Id = o.CreatedBy 
+                                        inner join OrderStatusCodes os on os.Id = o.OrderStatusCodeId
+                                        left outer join WorkgroupVendors wv on wv.Id = o.WorkgroupVendorId
+                                    where o.id in @ids",
                                 new { ids = pendingOrderIds.ToArray() }, ts)
                               .ToList();
 
@@ -124,10 +126,21 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                     message.Append("<p>");
                     message.Append("<table>");
                     message.Append("<tbody>");
-                    message.Append(string.Format("<tr><td style=\"width: 100px;\">Order Request</td><td>{0}</td></tr>", GenerateLink(order.RequestNumber)));
-                    message.Append(string.Format("<tr><td style=\"width: 100px;\"><strong>Created By:</strong></td><td>{0}</td></tr>", order.CreatedBy.FullName));
-                    message.Append(string.Format("<tr><td style=\"width: 100px;\"><strong>Status:</strong></td><td>{0}{1}{2}</td></tr>", extraStyle1, order.StatusCode.Name, extraStyle2));
-                    message.Append(string.Format("<tr><td style=\"width: 100px;\"><strong>Vendor:</strong></td><td>{0}</td></tr>", order.VendorName));
+                    message.Append(string.Format("<tr><td style=\"width: 100px;\">Order Request</td><td>{0}</td></tr>",
+                                                 GenerateLink(order.RequestNumber)));
+                    message.Append(
+                        string.Format(
+                            "<tr><td style=\"width: 100px;\"><strong>Created By:</strong></td><td>{0}</td></tr>",
+                            order.CreatedByFullName));
+                    message.Append(
+                        string.Format(
+                            "<tr><td style=\"width: 100px;\"><strong>Status:</strong></td><td>{0}{1}{2}</td></tr>",
+                            extraStyle1, order.StatusName, extraStyle2));
+                    message.Append(
+                        string.Format("<tr><td style=\"width: 100px;\"><strong>Vendor:</strong></td><td>{0}</td></tr>",
+                                      string.IsNullOrWhiteSpace(order.VendorName)
+                                          ? "-- Unspecified --"
+                                          : order.VendorName));
                     
                     message.Append("</tbody>");
                     message.Append("</table>");
@@ -136,7 +149,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                     message.Append("<tbody>");
 
                     dynamic orderid = order.Id;
-                    foreach (var emailQueue in pendingForUser.Where(a => a.OrderId == orderid).OrderByDescending(b => b.DateCreated))
+                    foreach (var emailQueue in pendingForUser.Where(a => a.OrderId == orderid).OrderByDescending(b => b.DateTimeCreated))
                     {
                         message.Append("<tr>");
                         message.Append(string.Format("<td style=\"padding-left: 7px; border-left-width: 0px; margin-left: 0px; width: 180px;\">{0}</td>", emailQueue.DateTimeCreated));
@@ -144,7 +157,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         message.Append(string.Format("<td >{0}</td>", emailQueue.Details));
                         message.Append("</tr>");
 
-                        //TODO: update when sent
+                        //TODO: update
                         /*
                         connection.Execute("update EmailQueueV2 set Pending = 0, DateTimeSent = @now where id = @id",
                                            new {now = DateTime.Now, id = emailQueue.Id}, ts);
@@ -160,84 +173,25 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 message.Append(string.Format("<p><em>{0} </em><em><a href=\"{1}\">{2}</a>&nbsp;</em></p>", "You can change your email preferences at any time by", "http://prepurchasing.ucdavis.edu/User/Profile", "updating your profile on the PrePurchasing site"));
                 
                 //TODO: Deliver!!
+                /*
+                var sgMessage = SendGrid.GenerateInstance();
+                sgMessage.From = new MailAddress(SendGridFrom, "UCD PrePurchasing No Reply");
+
+                sgMessage.Subject = orders.Count == 1
+                                        ? string.Format("PrePurchasing Notification for Order #{0}",
+                                                        orders.Single().RequestNumber)
+                                        : "PrePurchasing Notifications";
+
+                sgMessage.AddTo(email);
+                sgMessage.Html = message.ToString();
+
+                var transport = SMTP.GenerateInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
+                transport.Deliver(sgMessage);
+                */
 
                 ts.Commit();
             }
-
-            //for now, do nothing
         }
-
-        /*
-        private void BatchEmail(string email, List<dynamic> pendingForUser)
-        {
-            _emailQueueV2Repository.DbContext.BeginTransaction();
-            var orders = pendingForUser.Select(a => a.Order).Distinct().ToList();
-
-            var message = new StringBuilder();
-            message.Append(string.Format("<p>{0}</p>", "Here is your summary for the PrePurchasing system."));
-            foreach (var order in orders)
-            {
-                var extraStyle1 = string.Empty;
-                var extraStyle2 = string.Empty;
-                if (order.StatusCode.Id == OrderStatusCode.Codes.Cancelled || order.StatusCode.Id == OrderStatusCode.Codes.Denied)
-                {
-                    extraStyle1 = "<span style=\"color: Red;\">";
-                    extraStyle2 = "</span>";
-                }
-                message.Append("<p>");
-                message.Append("<table>");
-                message.Append("<tbody>");
-                message.Append(string.Format("<tr><td style=\"width: 100px;\">Order Request</td><td>{0}</td></tr>", GenerateLink(order.RequestNumber)));
-                message.Append(string.Format("<tr><td style=\"width: 100px;\"><strong>Created By:</strong></td><td>{0}</td></tr>", order.CreatedBy.FullName));
-                message.Append(string.Format("<tr><td style=\"width: 100px;\"><strong>Status:</strong></td><td>{0}{1}{2}</td></tr>", extraStyle1, order.StatusCode.Name, extraStyle2));
-                message.Append(string.Format("<tr><td style=\"width: 100px;\"><strong>Vendor:</strong></td><td>{0}</td></tr>", order.VendorName));
-
-
-                message.Append("</tbody>");
-                message.Append("</table>");
-
-
-                message.Append("<table border=\"1\">");
-                message.Append("<tbody>");
-
-                foreach (var emailQueue in pendingForUser.Where(a => a.Order == order).OrderByDescending(b => b.DateTimeCreated))
-                {
-                    message.Append("<tr>");
-                    message.Append(string.Format("<td style=\"padding-left: 7px; border-left-width: 0px; margin-left: 0px; width: 180px;\">{0}</td>", emailQueue.DateTimeCreated));
-                    message.Append(string.Format("<td style=\"width: 137px;\">{0}</td>", emailQueue.Action));
-                    message.Append(string.Format("<td >{0}</td>", emailQueue.Details));
-                    message.Append("</tr>");
-
-                    emailQueue.Pending = false;
-                    emailQueue.DateTimeSent = DateTime.Now;
-                    _emailQueueV2Repository.EnsurePersistent(emailQueue);
-                }
-
-                message.Append("</tbody>");
-                message.Append("</table>");
-                message.Append("<hr>");
-                message.Append("</p></br>");
-            }
-
-            message.Append(string.Format("<p><em>{0} </em><em><a href=\"{1}\">{2}</a>&nbsp;</em></p>", "You can change your email preferences at any time by", "http://prepurchasing.ucdavis.edu/User/Profile", "updating your profile on the PrePurchasing site"));
-
-            var sgMessage = SendGrid.GenerateInstance();
-            sgMessage.From = new MailAddress(SendGridFrom, "UCD PrePurchasing No Reply");
-
-            sgMessage.Subject = orders.Count == 1
-                                    ? string.Format("PrePurchasing Notification for Order #{0}",
-                                                    orders.Single().RequestNumber)
-                                    : "PrePurchasing Notifications";
-
-            sgMessage.AddTo(email);
-            sgMessage.Html = message.ToString();
-
-            var transport = SMTP.GenerateInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
-            transport.Deliver(sgMessage);
-
-            _emailQueueV2Repository.DbContext.CommitTransaction();
-        }
-        */
 
         private string GenerateLink(string orderRequestNumber)
         {

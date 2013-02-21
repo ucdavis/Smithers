@@ -34,6 +34,7 @@ namespace Smithers.Worker
             }
             else //local debugging
             {
+                new EmailNotificationSender().FakeEmailTesting();
                 SampleJob.Schedule();    
             }
 

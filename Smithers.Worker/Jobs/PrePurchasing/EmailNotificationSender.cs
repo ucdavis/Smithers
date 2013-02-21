@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Text;
 using Dapper;
+using Microsoft.WindowsAzure;
 using SendGridMail;
 using SendGridMail.Transport;
 
@@ -41,7 +42,8 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
         private void ProcessEmails(EmailPreferences.NotificationTypes notificationType)
         {
-            var connection = new SqlConnection("");
+            var connectionString = CloudConfigurationManager.GetSetting("opp-connection");
+            var connection = new SqlConnection(connectionString);
             connection.Open();
 
             List<dynamic> pending, users;
@@ -50,18 +52,18 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 pending =
                     connection.Query(
                         "select * from EmailQueueV2 where Pending = 1 and NotificationType = @notificationType",
-                        new {notificationType}).ToList();
+                        new {notificationType = notificationType.ToString()}).ToList();
 
                 var pendingUserIds = pending.Where(x => x.UserId != null).Select(x => x.UserId).Distinct();
 
                 users =
-                    connection.Query("select distinct * from users where userid in @userids",
-                                     pendingUserIds.ToArray()).ToList();
+                    connection.Query("select distinct * from users where id in @ids",
+                                     new {ids = pendingUserIds.ToArray()}).ToList();
             }
 
             #region Workgroup Notifications have a null User
                 
-            var workgroupNotifications = pending.Where(b => b.User == null).Select(a => a.Email).Distinct();
+            var workgroupNotifications = pending.Where(b => b.UserId == null).Select(a => a.Email).Distinct();
                 
             foreach (var wEmail in workgroupNotifications)
             {
@@ -78,7 +80,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
             foreach (var user in users)
             {
-                var pendingForUser = pending.Where(e => e.User == user).ToList();
+                var pendingForUser = pending.Where(e => e.UserId == user.Id).ToList();
 
                 var email = user.Email;
 

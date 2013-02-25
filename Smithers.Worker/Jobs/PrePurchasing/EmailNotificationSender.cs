@@ -187,11 +187,9 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         message.Append(string.Format("<td >{0}</td>", emailQueue.Details ?? string.Empty));
                         message.Append("</tr>");
 
-                        //TODO: update
-                        /*
+                        //TODO: Can move to single update outside of foreach
                         connection.Execute("update EmailQueueV2 set Pending = 0, DateTimeSent = @now where id = @id",
                                            new {now = DateTime.Now, id = emailQueue.Id}, ts);
-                         */
                     }
 
                     message.Append("</tbody>");
@@ -202,24 +200,19 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
                 message.Append(string.Format("<p><em>{0} </em><em><a href=\"{1}\">{2}</a>&nbsp;</em></p>", "You can change your email preferences at any time by", "http://prepurchasing.ucdavis.edu/User/Profile", "updating your profile on the PrePurchasing site"));
 
-                //TODO: only email jason in the test
-                if (string.Equals(email, "jsylvest@ucdavis.edu"))
-                {
-                    var sgMessage = SendGrid.GetInstance();
-                    sgMessage.From = new MailAddress(SendGridFrom, "Smithers OPP Test No Reply");
+                var sgMessage = SendGrid.GetInstance();
+                sgMessage.From = new MailAddress(SendGridFrom, "UCD PrePurchasing No Reply");
 
-                    sgMessage.Subject = pendingOrders.Count == 1
-                                            ? string.Format("PrePurchasing Notification for Order #{0}",
-                                                            pendingOrders.Single().RequestNumber)
-                                            : "PrePurchasing Notifications";
+                sgMessage.Subject = pendingOrders.Count == 1
+                                        ? string.Format("PrePurchasing Notification for Order #{0}",
+                                                        pendingOrders.Single().RequestNumber)
+                                        : "PrePurchasing Notifications";
 
-                    //sgMessage.AddTo(email);
-                    sgMessage.AddTo("jsylvest@ucdavis.edu");
-                    sgMessage.Html = message.ToString();
+                sgMessage.AddTo(email);
+                sgMessage.Html = message.ToString();
 
-                    var transport = SMTP.GetInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
-                    transport.Deliver(sgMessage);   
-                }
+                var transport = SMTP.GetInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
+                transport.Deliver(sgMessage);   
                 
                 ts.Commit();
             }

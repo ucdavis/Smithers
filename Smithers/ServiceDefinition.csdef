@@ -18,6 +18,9 @@
       <Setting name="opp-AzurePassword" />
       <Setting name="opp-AzureStorageKey" />
       <Setting name="opp-AzureBlobContainer" />
+      <Setting name="opp-sendgrid-username" />
+      <Setting name="opp-sendgrid-pass" />
+      <Setting name="opp-send-email" />
     </ConfigurationSettings>
     <Runtime executionContext="elevated">
     </Runtime>

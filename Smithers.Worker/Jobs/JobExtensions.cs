@@ -5,11 +5,16 @@ namespace Smithers.Worker.Jobs
 {
     public static class JobExtensions
     {
+        static readonly TimeZoneInfo PacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+        
         public static CronScheduleBuilder InPacificTimeZone(this CronScheduleBuilder builder)
         {
-            var pacific = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+            return builder.InTimeZone(PacificTimeZone);
+        }
 
-            return builder.InTimeZone(pacific);
+        public static DateTime InPacificTimeZone(this DateTime dateTime)
+        {
+            return TimeZoneInfo.ConvertTime(dateTime, PacificTimeZone);
         }
     }
 }

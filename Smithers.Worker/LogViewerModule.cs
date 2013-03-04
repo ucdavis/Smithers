@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Web.Security;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -31,21 +32,26 @@ namespace Smithers.Worker
                     }
                     else
                     {
-                        var resp = Response.AsRedirect("/", RedirectResponse.RedirectType.Temporary);
-                        var cookie = new NancyCookie(UserTokenKey, user, true)
+                        var response = Response.AsRedirect("/", RedirectResponse.RedirectType.Temporary);
+
+                        //place the user in a forms ticket, encrypt it, and then create a nancy cookie from it
+                        var ticket = new FormsAuthenticationTicket(user, true, TimeSpan.FromDays(30).Minutes);
+                        
+                        var cookie = new NancyCookie(UserTokenKey, FormsAuthentication.Encrypt(ticket), true)
                         {
                             Expires = DateTime.Now + TimeSpan.FromDays(30)
                         };
-                        resp.AddCookie(cookie);
+                        
+                        response.AddCookie(cookie);
 
-                        return resp;
+                        return response;
                     }
                 };
 
             Get["/"] = _ =>
                 {
-                    var user = Request.Cookies.ContainsKey(UserTokenKey) ? Request.Cookies[UserTokenKey] : null;
-
+                    var user = ProcessUserCookie();
+                    
                     if (string.IsNullOrWhiteSpace(user)) //if user isn't logged in, authenticate
                     {
                         return Response.AsRedirect(CasUrl + "login?service=" + Context.Request.Url.SiteBase + "/auth");
@@ -111,6 +117,30 @@ namespace Smithers.Worker
             var allowed = CloudConfigurationManager.GetSetting("AllowedUsers");
 
             return allowed != null && allowed.Split(';').Contains(user);
+        }
+
+        private string ProcessUserCookie()
+        {
+            var userCookie = Request.Cookies.ContainsKey(UserTokenKey) ? Request.Cookies[UserTokenKey] : string.Empty;
+
+            try
+            {
+                var userTicket = FormsAuthentication.Decrypt(userCookie);
+
+                if (userTicket != null)
+                {
+                    return userTicket.Name;
+                }
+            }
+            catch (ArgumentException)
+            {
+                if (Request.Cookies.ContainsKey(UserTokenKey)) //remove cookie that is causing exception
+                {
+                    Request.Cookies.Remove(UserTokenKey);
+                }
+            }
+
+            return null;
         }
 
         private string GetUser()

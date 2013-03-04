@@ -8,23 +8,47 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Nancy;
 using System.Dynamic;
+using Nancy.Cookies;
+using Nancy.Responses;
 
 namespace Smithers.Worker
 {
     public class LogViewerModule : NancyModule
     {
         private const string CasUrl = "https://cas.ucdavis.edu:8443/cas/";
+        private const string UserTokenKey = "smithers.userToken";
         private const int DefaultTakeCount = 100;
 
         public LogViewerModule()
         {
-            Get["/"] = _ =>
+            Get["/auth"] = _ =>
                 {
                     var user = GetUser();
-                    
+
                     if (string.IsNullOrWhiteSpace(user)) //if user isn't logged in, authenticate
                     {
-                        return Response.AsRedirect(CasUrl + "login?service=" + Context.Request.Url.SiteBase);
+                        return Response.AsRedirect(CasUrl + "login?service=" + Context.Request.Url.SiteBase + "/auth");
+                    }
+                    else
+                    {
+                        var resp = Response.AsRedirect("/", RedirectResponse.RedirectType.Temporary);
+                        var cookie = new NancyCookie(UserTokenKey, user, true)
+                        {
+                            Expires = DateTime.Now + TimeSpan.FromDays(30)
+                        };
+                        resp.AddCookie(cookie);
+
+                        return resp;
+                    }
+                };
+
+            Get["/"] = _ =>
+                {
+                    var user = Request.Cookies.ContainsKey(UserTokenKey) ? Request.Cookies[UserTokenKey] : null;
+
+                    if (string.IsNullOrWhiteSpace(user)) //if user isn't logged in, authenticate
+                    {
+                        return Response.AsRedirect(CasUrl + "login?service=" + Context.Request.Url.SiteBase + "/auth");
                     }
                     
                     if (!HasAccess(user))
@@ -93,7 +117,7 @@ namespace Smithers.Worker
         {
             // get ticket & service
             string ticket = Context.Request.Query.ticket;
-            string service = Context.Request.Url.SiteBase;
+            string service = Context.Request.Url.SiteBase + "/auth";
 
             // if ticket is defined then we assume they are coming from CAS
             if (!string.IsNullOrEmpty(ticket))

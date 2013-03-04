@@ -3,27 +3,58 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Web.Security;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Nancy;
 using System.Dynamic;
+using Nancy.Cookies;
+using Nancy.Responses;
 
 namespace Smithers.Worker
 {
     public class LogViewerModule : NancyModule
     {
         private const string CasUrl = "https://cas.ucdavis.edu:8443/cas/";
-        
+        private const string UserTokenKey = "smithers.userToken";
+        private const int DefaultTakeCount = 100;
+
         public LogViewerModule()
         {
-            Get["/"] = _ =>
+            Get["/auth"] = _ =>
                 {
                     var user = GetUser();
+
+                    if (string.IsNullOrWhiteSpace(user)) //if user isn't logged in, authenticate
+                    {
+                        return Response.AsRedirect(CasUrl + "login?service=" + Context.Request.Url.SiteBase + "/auth");
+                    }
+                    else
+                    {
+                        var response = Response.AsRedirect("/", RedirectResponse.RedirectType.Temporary);
+
+                        //place the user in a forms ticket, encrypt it, and then create a nancy cookie from it
+                        var ticket = new FormsAuthenticationTicket(user, true, TimeSpan.FromDays(30).Minutes);
+                        
+                        var cookie = new NancyCookie(UserTokenKey, FormsAuthentication.Encrypt(ticket), true)
+                        {
+                            Expires = DateTime.Now + TimeSpan.FromDays(30)
+                        };
+                        
+                        response.AddCookie(cookie);
+
+                        return response;
+                    }
+                };
+
+            Get["/"] = _ =>
+                {
+                    var user = ProcessUserCookie();
                     
                     if (string.IsNullOrWhiteSpace(user)) //if user isn't logged in, authenticate
                     {
-                        return Response.AsRedirect(CasUrl + "login?service=" + Context.Request.Url.SiteBase);
+                        return Response.AsRedirect(CasUrl + "login?service=" + Context.Request.Url.SiteBase + "/auth");
                     }
                     
                     if (!HasAccess(user))
@@ -53,8 +84,19 @@ namespace Smithers.Worker
                             TableQuery.CombineFilters(filterCurrent, TableOperators.Or, filterLast)
                             );
 
-                    var res = table.ExecuteQuery(query);
+                    var limitResults = Request.Query.more.HasValue == false;
+
+                    if (limitResults)
+                    {
+                        query = query.Take(DefaultTakeCount); //limit the results by default
+                    }
                     
+                    var res = table.ExecuteQuery(query);
+
+                    if (limitResults) //We also have to stop the returned query from pulling >1 page if we are limiting results
+                    {
+                        res = res.Take(DefaultTakeCount);
+                    }
                     
                     dynamic model = new ExpandoObject();
                     model.Events = res.Select(
@@ -77,11 +119,35 @@ namespace Smithers.Worker
             return allowed != null && allowed.Split(';').Contains(user);
         }
 
+        private string ProcessUserCookie()
+        {
+            var userCookie = Request.Cookies.ContainsKey(UserTokenKey) ? Request.Cookies[UserTokenKey] : string.Empty;
+
+            try
+            {
+                var userTicket = FormsAuthentication.Decrypt(userCookie);
+
+                if (userTicket != null)
+                {
+                    return userTicket.Name;
+                }
+            }
+            catch (Exception)
+            {
+                if (Request.Cookies.ContainsKey(UserTokenKey)) //remove cookie that is causing exception
+                {
+                    Request.Cookies.Remove(UserTokenKey);
+                }
+            }
+
+            return null;
+        }
+
         private string GetUser()
         {
             // get ticket & service
             string ticket = Context.Request.Query.ticket;
-            string service = Context.Request.Url.SiteBase;
+            string service = Context.Request.Url.SiteBase + "/auth";
 
             // if ticket is defined then we assume they are coming from CAS
             if (!string.IsNullOrEmpty(ticket))

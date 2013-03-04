@@ -25,7 +25,7 @@ namespace Smithers.AzureLogAppender
         {
             var now = DateTime.UtcNow;
             PartitionKey = string.Format("{0:yyyy-MM}", now);
-            RowKey = string.Format("{0:dd HH:mm:ss.fff}-{1}", now, Guid.NewGuid());
+            RowKey = string.Format("{0:D19}", DateTime.MaxValue.Ticks - DateTime.UtcNow.Ticks);
         }
 
         #region Table columns

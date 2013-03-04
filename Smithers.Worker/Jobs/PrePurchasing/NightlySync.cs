@@ -54,7 +54,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogCustomError(ex, "Org Descendants");
+                    Logger.LogCustomError(ex, jobName: "Org Descendants", notify: true);
                 }
 
                 try
@@ -64,7 +64,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogCustomError(ex, "Sync Workgroup Accounts");
+                    Logger.LogCustomError(ex, jobName: "Sync Workgroup Accounts", notify: true);
                 }
             }
         }

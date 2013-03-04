@@ -10,7 +10,7 @@ namespace Smithers.Worker.Jobs
 {
     public static class LoggerExtensions
     {
-        public static void LogCustomError(this ILog log, Exception ex, string jobName = null)
+        public static void LogCustomError(this ILog log, Exception ex, string jobName = null, bool notify = false)
         {
             if (jobName == null)
             {
@@ -19,7 +19,10 @@ namespace Smithers.Worker.Jobs
 
             log.ErrorFormat("Error: {0} failed at {1} with exception {2} {3}", ex, jobName, ex.Source, ex.Message, ex.StackTrace);
 
-            SendErrorEmail(jobName, ex, log);
+            if (notify)
+            {
+                SendErrorEmail(jobName, ex, log);
+            }
         }
 
         private static void SendErrorEmail(string jobName, Exception ex, ILog log)

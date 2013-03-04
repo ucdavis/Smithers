@@ -98,6 +98,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Jobs\ErrorTracking.cs" />
     <Compile Include="Jobs\Job.cs" />
     <Compile Include="Jobs\JobExtensions.cs" />
     <Compile Include="Jobs\LoggerExtensions.cs" />

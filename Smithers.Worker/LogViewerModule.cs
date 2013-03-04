@@ -14,7 +14,8 @@ namespace Smithers.Worker
     public class LogViewerModule : NancyModule
     {
         private const string CasUrl = "https://cas.ucdavis.edu:8443/cas/";
-        
+        private const int DefaultTakeCount = 100;
+
         public LogViewerModule()
         {
             Get["/"] = _ =>
@@ -53,8 +54,19 @@ namespace Smithers.Worker
                             TableQuery.CombineFilters(filterCurrent, TableOperators.Or, filterLast)
                             );
 
-                    var res = table.ExecuteQuery(query);
+                    var limitResults = Request.Query.more.HasValue == false;
+
+                    if (limitResults)
+                    {
+                        query = query.Take(DefaultTakeCount); //limit the results by default
+                    }
                     
+                    var res = table.ExecuteQuery(query);
+
+                    if (limitResults) //We also have to stop the returned query from pulling >1 page if we are limiting results
+                    {
+                        res = res.Take(DefaultTakeCount);
+                    }
                     
                     dynamic model = new ExpandoObject();
                     model.Events = res.Select(

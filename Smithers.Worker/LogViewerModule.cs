@@ -132,7 +132,7 @@ namespace Smithers.Worker
                     return userTicket.Name;
                 }
             }
-            catch (ArgumentException)
+            catch (Exception)
             {
                 if (Request.Cookies.ContainsKey(UserTokenKey)) //remove cookie that is causing exception
                 {

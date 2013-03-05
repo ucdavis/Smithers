@@ -37,7 +37,7 @@ namespace Smithers.Worker.Jobs
         /// <summary>
         /// Default to notifying of errors only if the job fails twice consecutively
         /// </summary>
-        protected bool ShouldNotifyError()
+        protected virtual bool ShouldNotifyError()
         {
             return ErrorTracking.GetFailCount<T>() > 1;
         }

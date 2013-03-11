@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
@@ -77,7 +78,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
         
         private void ProcessEmails(EmailPreferences.NotificationTypes notificationType)
         {
-            var connection = new SqlConnection(_connectionString);
+            var connection = new ReliableSqlConnection(_connectionString);
             connection.Open();
 
             using (connection)
@@ -121,7 +122,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             }
         }
 
-        private void BatchEmail(SqlConnection connection, string email, List<dynamic> pendingForUser)
+        private void BatchEmail(IDbConnection connection, string email, List<dynamic> pendingForUser)
         {
             var pendingOrderIds = pendingForUser.Select(x => x.OrderId).Distinct();
 

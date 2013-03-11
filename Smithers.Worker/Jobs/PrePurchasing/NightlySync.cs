@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.SqlClient;
 using Dapper;
+using Microsoft.Practices.EnterpriseLibrary.WindowsAzure.TransientFaultHandling.SqlAzure;
 using Microsoft.WindowsAzure;
 using Quartz;
 using Quartz.Impl;
@@ -42,7 +43,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 return;
             }
             
-            var connection = new SqlConnection(connectionString);
+            var connection = new ReliableSqlConnection(connectionString);
             connection.Open();
             
             using (connection)

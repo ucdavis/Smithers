@@ -96,6 +96,9 @@
     <Reference Include="Nancy.Hosting.Self">
       <HintPath>..\packages\Nancy.Hosting.Self.0.15.3\lib\net40\Nancy.Hosting.Self.dll</HintPath>
     </Reference>
+    <Reference Include="OpenPop">
+      <HintPath>..\packages\OpenPop.NET.2.0.4.369\lib\net20\OpenPop.dll</HintPath>
+    </Reference>
     <Reference Include="Quartz">
       <HintPath>..\packages\Quartz.2.1.2\lib\net40\Quartz.dll</HintPath>
     </Reference>
@@ -130,6 +133,7 @@
     <Compile Include="Jobs\PrePurchasing\DatabaseBackup.cs" />
     <Compile Include="Jobs\PrePurchasing\EmailNotificationSender.cs" />
     <Compile Include="Jobs\PrePurchasing\NightlySync.cs" />
+    <Compile Include="Jobs\PrePurchasing\ReadEmailForAttachments.cs" />
     <Compile Include="Jobs\SampleJob.cs" />
     <Compile Include="LogViewerModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -141,8 +145,12 @@
     <Compile Include="WorkerRole.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
-    <None Include="packages.config" />
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Service References\AzureDataAccess\Microsoft.SqlServer.Management.Dac.Services.wsdl" />
     <None Include="Service References\AzureDataAccess\Microsoft.SqlServer.Management.Dac.ServiceTypes.xsd">
       <SubType>Designer</SubType>

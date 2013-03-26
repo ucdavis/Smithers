@@ -1,0 +1,286 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Mail;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.Practices.EnterpriseLibrary.WindowsAzure.TransientFaultHandling.SqlAzure;
+using Microsoft.WindowsAzure;
+using OpenPop.Mime.Header;
+using OpenPop.Pop3;
+using Quartz;
+using Quartz.Impl;
+using Dapper;
+using OpenPop;
+using SendGridMail;
+using SendGridMail.Transport;
+
+namespace Smithers.Worker.Jobs.PrePurchasing
+{
+    class ReadEmailForAttachments : Job<ReadEmailForAttachments>
+    {
+        private string _connectionString;
+        private string _sendGridUserName;
+        private string _sendGridPassword;
+        private const string SendGridFrom = "opp-noreply@ucdavis.edu";
+        private static readonly List<string> ClosedOrders = new List<string>{"CN", "CP", "OC", "OD"};
+
+        private string _hostName;
+        private int _port;
+        private string _userName;
+        private string _password;
+
+        public static void Schedule()
+        {
+            var job = JobBuilder.Create<SampleJob>().Build();
+
+            //run trigger every hour after inital 2 second delay
+            var trigger = TriggerBuilder.Create().ForJob(job)
+                            .WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(5))
+                            .StartAt(DateTimeOffset.Now.AddSeconds(2))
+                            .Build();
+
+            var sched = StdSchedulerFactory.GetDefaultScheduler();
+            sched.ScheduleJob(job, trigger);
+            sched.Start();
+        }
+
+        public override void ExecuteJob(IJobExecutionContext context)
+        {
+            var readEmail = CloudConfigurationManager.GetSetting("opp-read-email");
+
+            //Don't execute unless email is turned on
+            if (!string.Equals(readEmail, "Yes", StringComparison.InvariantCultureIgnoreCase)) return;
+
+
+
+            //Setup sendGrid info, so we only look it up once per execution call
+            _sendGridUserName = CloudConfigurationManager.GetSetting("opp-sendgrid-username");
+            _sendGridPassword = CloudConfigurationManager.GetSetting("opp-sendgrid-pass");
+
+            //Setup connection string
+            _connectionString = CloudConfigurationManager.GetSetting("opp-connection");
+
+            _hostName = CloudConfigurationManager.GetSetting("opp-pop-host-name");
+            _port = Convert.ToInt32(CloudConfigurationManager.GetSetting("opp-pop-port"));
+            _userName = CloudConfigurationManager.GetSetting("opp-pop-user-name");
+            _password = CloudConfigurationManager.GetSetting("opp-pop-password");
+
+            ReadEmails();
+
+            //System.Threading.Thread.Sleep(TimeSpan.FromSeconds(2));
+            //Logger.Info("Job is doing some heavy work here");
+            //System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
+        }
+
+
+        private void ReadEmails()
+        {
+            var userNotFound = 0;
+            var duplicateEmail = 0;
+            var orderNotFound = 0;
+            var noAccess = 0;
+            var exceptionCount = 0;
+            var successCount = 0;
+
+
+            var connection = new ReliableSqlConnection(_connectionString);
+            connection.Open();
+
+            using (connection)
+            {
+                using (Pop3Client client = new Pop3Client())
+                {
+                    // Connect to the server
+                    client.Connect(_hostName, _port, true);
+
+                    // Authenticate ourselves towards the server
+                    client.Authenticate(_userName, _password);
+
+                    // Get the number of messages in the inbox
+                    int messageCount = client.GetMessageCount();
+
+                    // Messages are numbered in the interval: [1, messageCount]
+                    // Ergo: message numbers are 1-based.
+                    // Most servers give the latest message the highest number
+                    for (int i = messageCount; i > 0; i--)
+                    {
+                        MessageHeader headers = client.GetMessageHeaders(i);
+
+                        RfcMailAddress from = headers.From;
+                        string subject = headers.Subject;
+                        var messageId = headers.MessageId; // Can use to check if we have already processed.
+                        var user = connection.Query("select Id, FirstName, LastName from Users where Email = @mailEmail", new { mailEmail = from.ToString().ToLower() }).SingleOrDefault();
+
+                        var userId = user == null ? null : user.Id;
+                        if (string.IsNullOrWhiteSpace(userId))
+                        {
+                            //Unique User not Found. Delete message
+                            client.DeleteMessage(i);
+                            userNotFound++;
+                            //TODO: Logging?
+
+                            continue;
+                        }
+                        if (connection.Query("select Id from Attachments where MessageId = @messageId", new { messageId = messageId}).Any())
+                            //TODO: The MessageId field 
+                        {
+                            //This email was already processed, just delete it.
+                            client.DeleteMessage(i);
+                            duplicateEmail++;
+                            //TODO: Logging?
+
+                            continue;
+                        }
+
+                        var order = GetOrder(connection, subject);
+                        int? orderId = null;
+                        if (order == null)
+                        {
+                            client.DeleteMessage(i);
+                            SendSingleEmail(from.ToString().ToLower(), string.Format("RE: {0}", subject));
+                            orderNotFound++;
+
+                            continue;
+                        }
+                        else
+                        {
+                            orderId = order.Id;
+                        }
+                        //OK, we have found a user and an Order.
+                        try
+                        {
+                            if (!HasAccess(connection, userId, orderId.Value, order.OrderStatusCodeId))
+                            {
+                                NotifyFailure(connection, orderId.Value, userId, "No Access");
+                                client.DeleteMessage(i);
+                                noAccess++;
+
+                                continue;
+                            }
+                            var message = client.GetMessage(i);
+                            var attachmentFound = false;
+                            foreach (var attachment in message.FindAllAttachments())
+                            {
+                                attachmentFound = true;
+                                var contentType = attachment.ContentType.ToString();
+                                if (string.IsNullOrWhiteSpace(contentType))
+                                {
+                                    contentType = "application/octet-stream";
+                                }
+
+                                connection.Execute("insert into Attachments (Filename, ContentType, Contents, OrderId, UserId, Category, MessageId) values (@fileName, @contentType, @contents, @orderId, @userId, 'Email Attachment', @messageId)"
+                                    , new { fileName = attachment.FileName,  contentType = contentType, contents = attachment.Body, orderId = orderId.Value, userId = userId, messageId = messageId});
+                                NotifyUsersAttachmentAdded(connection, orderId.Value, user);
+                            }
+
+                        }
+                        catch (Exception ex)
+                        {
+                            //TODO: Log exception?
+                            exceptionCount++;
+                            NotifyFailure(connection, orderId.Value, userId, "Error");
+                            client.DeleteMessage(i);
+                            continue;
+                        }
+
+                        successCount++;
+                        client.DeleteMessage(i);
+
+                    }
+
+                    //TODO: Log counts?
+                    if (userNotFound > 0 ||
+                        duplicateEmail > 0 ||
+                        orderNotFound > 0 ||
+                        noAccess > 0 ||
+                        exceptionCount > 0 ||
+                        successCount > 0)
+                    {
+                        Logger.Info(string.Format("User Not Found: {0} Duplicate Email: {1} Order Not Found: {2} No Access: {3} Exceptions: {4} Success: {5}", userNotFound, duplicateEmail, orderNotFound, noAccess, exceptionCount, successCount));
+                    }
+
+                }
+            }
+        }
+
+        private bool HasAccess(ReliableSqlConnection connection, object userId, int orderId, string orderStatusCode)
+        {
+            if (ClosedOrders.Contains(orderStatusCode))
+            {
+                if (connection.Query("select id from vClosedAccess where orderid = @orderId and accessuserid = @userId", new {orderId = orderId, userId = userId}).Any())
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (connection.Query("select Read from vOpenAccess where orderid = @orderId and accessuserid = @userId", new { orderId = orderId, userId = userId }).Any())
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void NotifyUsersAttachmentAdded(ReliableSqlConnection connection, int orderId, dynamic actor)
+        {
+            var users = connection.Query("select distinct UserId from OrderTracking where OrderId = @orderId", new { orderId = orderId }).ToList();
+
+            foreach (var user in users)
+            {
+                var pref = connection.Query("select AddAttachment, NotificationType from EmailPreferences where UserId = @userId", new { userId = user }).SingleOrDefault();
+                if (pref == null || pref.AddAttachment == 1)
+                {
+                    var id = Guid.NewGuid().ToString(); //DO I need this? I don't see a default value in the table.
+
+                    connection.Execute(
+                        "insert into EmailQueueV2 (Id, UserId, OrderId, Pending, NotificationType, Action, Details) values (@id, @userId, @orderId, 1, @notificationType, 'Attachment Added', @details)",
+                        new { id = id, userId = user, orderId = orderId, notificationType = pref == null ? EmailPreferences.NotificationTypes.PerEvent.ToString() : pref.NotificationType, details = string.Format("By {0} {1}.", actor.FirstName, actor.Lastname) });
+                }
+            }
+
+
+            throw new NotImplementedException();
+        }
+
+        private void NotifyFailure(ReliableSqlConnection connection, int orderId, object userId, string error)
+        {
+            var id = Guid.NewGuid().ToString(); //DO I need this? I don't see a default value in the table.
+
+            connection.Execute(
+                "insert into EmailQueueV2 (Id, UserId, OrderId, Pending, NotificationType, Action, Details) values (@id, @userId, @orderId, 1, @notificationType, @action, 'Unable to add attachment')",
+                new { id = id, userId = userId, orderId = orderId, notificationType = EmailPreferences.NotificationTypes.PerEvent.ToString(), action = error });
+        }
+
+
+        private dynamic GetOrder(ReliableSqlConnection connection, string subject)
+        {
+            try
+            {
+                var orderRequestNumber = subject.Split(' ')[2];
+                var order = connection.Query("select Id, OrderStatusCodeId from Orders where RequestNumber = @orderRequestNumber", new { orderRequestNumber }).SingleOrDefault(); 
+
+                return order;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private void SendSingleEmail(string email, string subject)
+        {
+            var sgMessage = SendGrid.GetInstance();
+            sgMessage.From = new MailAddress(SendGridFrom, "UCD PrePurchasing No Reply");
+            sgMessage.Subject = subject;
+            sgMessage.AddTo(email);
+            sgMessage.Html = "<p>You tried to add an attachment by emailing oppattach@ucdavis.edu but the related order was not found. The subject line must be in the exact format:</p><p>Request # xxxx-xxxxxxx</p><p>You may copy this from the Order Review Page</p>";
+
+            var transport = SMTP.GetInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
+            transport.Deliver(sgMessage);   
+        }
+    }
+}

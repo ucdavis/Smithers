@@ -175,7 +175,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
                                 Logger.Info(string.Format("Debugging Info {0} -- {1} - {2} - {3} - {4} - {5}", 8, attachment.FileName, contentType, orderId.Value, userId, messageId));
                                 connection.Execute("insert into Attachments (Id, Filename, ContentType, Contents, OrderId, DateCreated, UserId, Category, MessageId) values (@id, @fileName, @contentType, @contents, @orderId, @dateCreated, @userId, 'Email Attachment', @messageId)"
-                                    , new { id = Guid.NewGuid(), fileName = "test", contentType = "application/octet-stream", contents = attachment.Body, orderId = 17542, dateCreated = dateTime, userId = "jsylvest", messageId = "test" });
+                                    , new { id = Guid.NewGuid(), fileName = attachment.FileName, contentType = contentType, contents = attachment.Body, orderId = orderId.Value, dateCreated = dateTime, userId = userId.ToString(), messageId = messageId });
                                 Logger.Info("Debugging Info 8A");
                                 NotifyUsersAttachmentAdded(connection, orderId.Value, user);
                             }
@@ -244,7 +244,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
             foreach (var user in users)
             {
-                var pref = connection.Query("select AddAttachment, NotificationType from EmailPreferences where UserId = @userId", new { userId = user.ToString() }).SingleOrDefault();
+                var pref = connection.Query("select AddAttachment, NotificationType from EmailPreferences where Id = @id", new { id = user.ToString() }).SingleOrDefault();
                 if (pref == null || pref.AddAttachment == 1)
                 {
                     //var id = Guid.NewGuid().ToString(); //DO I need this? I don't see a default value in the table.

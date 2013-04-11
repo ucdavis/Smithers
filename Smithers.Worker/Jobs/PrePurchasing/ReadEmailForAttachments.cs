@@ -35,9 +35,9 @@ namespace Smithers.Worker.Jobs.PrePurchasing
         {
             var job = JobBuilder.Create<SampleJob>().Build();
 
-            //run trigger every hour after inital 2 second delay
+            //run trigger every 15 minutes after inital 2 second delay
             var trigger = TriggerBuilder.Create().ForJob(job)
-                            .WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(5))
+                            .WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(15))
                             .StartAt(DateTimeOffset.Now.AddSeconds(2))
                             .Build();
 
@@ -111,7 +111,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         RfcMailAddress from = headers.From;
                         string subject = headers.Subject;
                         var messageId = headers.MessageId; // Can use to check if we have already processed.
-                        var user = connection.Query("select Id, FirstName, LastName from Users where Email = @mailEmail", new { mailEmail = from.ToString().ToLower() }).SingleOrDefault();
+                        var user = connection.Query("select Id, FirstName, LastName from Users where Email = @mailEmail", new { mailEmail = from.Address.ToLower() }).SingleOrDefault();
 
                         var userId = user == null ? null : user.Id;
                         if (string.IsNullOrWhiteSpace(userId))
@@ -119,7 +119,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                             //Unique User not Found. Delete message
                             client.DeleteMessage(i);
                             userNotFound++;
-                            //TODO: Logging?
+                            //Logger.Info(string.Format("User not found: {0}", from.Address.ToLower()));
 
                             continue;
                         }
@@ -129,7 +129,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                             //This email was already processed, just delete it.
                             client.DeleteMessage(i);
                             duplicateEmail++;
-                            //TODO: Logging?
+                            //Logger.Info(string.Format("Duplicate Email Message Id: {0}", messageId));
 
                             continue;
                         }
@@ -190,7 +190,6 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
                     }
 
-                    //TODO: Log counts?
                     if (userNotFound > 0 ||
                         duplicateEmail > 0 ||
                         orderNotFound > 0 ||
@@ -242,8 +241,6 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 }
             }
 
-
-            throw new NotImplementedException();
         }
 
         private void NotifyFailure(ReliableSqlConnection connection, int orderId, object userId, string error)
@@ -258,17 +255,19 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
         private dynamic GetOrder(ReliableSqlConnection connection, string subject)
         {
+            string orderRequestNumber;
             try
             {
-                var orderRequestNumber = subject.Split(' ')[2];
-                var order = connection.Query("select Id, OrderStatusCodeId from Orders where RequestNumber = @orderRequestNumber", new { orderRequestNumber }).SingleOrDefault(); 
-
-                return order;
+                orderRequestNumber = subject.Split(' ')[2];
             }
             catch (Exception)
             {
                 return null;
             }
+
+            var order = connection.Query("select Id, OrderStatusCodeId from Orders where RequestNumber = @orderRequestNumber", new { orderRequestNumber }).SingleOrDefault();
+
+            return order;
         }
 
         private void SendSingleEmail(string email, string subject)

@@ -20,6 +20,11 @@
       <Setting name="opp-sendgrid-username" value="ucdprepurchasing" />
       <Setting name="opp-sendgrid-pass" value="" />
       <Setting name="opp-send-email" value="Yes" />
+      <Setting name="opp-read-email" value="No" />
+      <Setting name="opp-pop-host-name" value="mail.ucdavis.edu" />
+      <Setting name="opp-pop-port" value="995" />
+      <Setting name="opp-pop-user-name" value="NotTheUserName" />
+      <Setting name="opp-pop-password" value="NotThePassword" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

@@ -21,6 +21,11 @@
       <Setting name="opp-sendgrid-username" />
       <Setting name="opp-sendgrid-pass" />
       <Setting name="opp-send-email" />
+      <Setting name="opp-read-email"/>
+      <Setting name="opp-pop-host-name"/>
+      <Setting name="opp-pop-port"/>
+      <Setting name="opp-pop-user-name"/>
+      <Setting name="opp-pop-password"/>
     </ConfigurationSettings>
     <Runtime executionContext="elevated">
     </Runtime>

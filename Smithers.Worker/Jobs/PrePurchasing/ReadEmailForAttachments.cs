@@ -208,8 +208,9 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
         private bool HasAccess(ReliableSqlConnection connection, object userId, int orderId, string orderStatusCode)
         {
-            Logger.Info(string.Format("Debugging Info {0}", 1));
-            if (ClosedOrders.Contains(orderStatusCode))
+            Logger.Info(string.Format("Debugging Info {0} - {1}", 1, orderStatusCode));
+            //if (ClosedOrders.Contains(orderStatusCode))
+            if (orderStatusCode == "CN" || orderStatusCode == "CP" || orderStatusCode == "OC" || orderStatusCode == "OD")
             {
                 Logger.Info(string.Format("Debugging Info {0}", 2));
                 if (connection.Query("select id from vClosedAccess where orderid = @orderId and accessuserid = @userId", new {orderId = orderId, userId = userId}).Any())

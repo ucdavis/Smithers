@@ -172,7 +172,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                                 }
                                 Logger.Info(string.Format("Debugging Info {0} -- {1} - {2} - {3} - {4} - {5}", 8, attachment.FileName, contentType, orderId.Value, userId, messageId));
                                 connection.Execute("insert into Attachments (Filename, ContentType, Contents, OrderId, UserId, Category, MessageId) values (@fileName, @contentType, @contents, @orderId, @userId, 'Email Attachment', @messageId)"
-                                    , new { fileName = attachment.FileName,  contentType = contentType, contents = attachment.Body, orderId = orderId.Value, userId = userId, messageId = messageId});
+                                    , new { fileName = attachment.FileName,  contentType = contentType, contents = attachment.Body, orderId = orderId.Value, userId = userId.ToString(), messageId = messageId});
                                 NotifyUsersAttachmentAdded(connection, orderId.Value, user);
                             }
 
@@ -214,7 +214,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             if (orderStatusCode == "CN" || orderStatusCode == "CP" || orderStatusCode == "OC" || orderStatusCode == "OD")
             {
                 Logger.Info(string.Format("Debugging Info {0}", 2));
-                if (connection.Query("select id from vClosedAccess where orderid = @orderId and accessuserid = @userId", new {orderId = orderId, userId = userId}).Any())
+                if (connection.Query("select id from vClosedAccess where orderid = @orderId and accessuserid = @userId", new {orderId = orderId, userId = userId.ToString()}).Any())
                 {
                     Logger.Info(string.Format("Debugging Info {0}", 3));
                     return true;
@@ -223,7 +223,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             else
             {
                 Logger.Info(string.Format("Debugging Info {0}", 4));
-                if (connection.Query("select Read from vOpenAccess where orderid = @orderId and accessuserid = @userId", new { orderId = orderId, userId = userId }).Any())
+                if (connection.Query("select Read from vOpenAccess where orderid = @orderId and accessuserid = @userId", new { orderId = orderId, userId = userId.ToString() }).Any())
                 {
                     Logger.Info(string.Format("Debugging Info {0}", 5));
                     return true;
@@ -239,14 +239,14 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
             foreach (var user in users)
             {
-                var pref = connection.Query("select AddAttachment, NotificationType from EmailPreferences where UserId = @userId", new { userId = user }).SingleOrDefault();
+                var pref = connection.Query("select AddAttachment, NotificationType from EmailPreferences where UserId = @userId", new { userId = user.ToString() }).SingleOrDefault();
                 if (pref == null || pref.AddAttachment == 1)
                 {
                     var id = Guid.NewGuid().ToString(); //DO I need this? I don't see a default value in the table.
 
                     connection.Execute(
                         "insert into EmailQueueV2 (Id, UserId, OrderId, Pending, NotificationType, Action, Details) values (@id, @userId, @orderId, 1, @notificationType, 'Attachment Added', @details)",
-                        new { id = id, userId = user, orderId = orderId, notificationType = pref == null ? EmailPreferences.NotificationTypes.PerEvent.ToString() : pref.NotificationType, details = string.Format("By {0} {1}.", actor.FirstName, actor.Lastname) });
+                        new { id = id, userId = user.ToString(), orderId = orderId, notificationType = pref == null ? EmailPreferences.NotificationTypes.PerEvent.ToString() : pref.NotificationType, details = string.Format("By {0} {1}.", actor.FirstName, actor.Lastname) });
                 }
             }
 

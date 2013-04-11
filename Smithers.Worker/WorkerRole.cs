@@ -32,7 +32,7 @@ namespace Smithers.Worker
                 NightlySync.Schedule();
                 DatabaseBackup.Schedule();
                 EmailNotificationSender.Schedule();
-                ReadEmailForAttachments.Schedule();
+                //ReadEmailForAttachments.Schedule();
             }
             else //local debugging
             {

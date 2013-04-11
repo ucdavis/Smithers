@@ -173,6 +173,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                                 Logger.Info(string.Format("Debugging Info {0} -- {1} - {2} - {3} - {4} - {5}", 8, attachment.FileName, contentType, orderId.Value, userId, messageId));
                                 connection.Execute("insert into Attachments (Filename, ContentType, Contents, OrderId, UserId, Category, MessageId) values (@fileName, @contentType, @contents, @orderId, @userId, 'Email Attachment', @messageId)"
                                     , new { fileName = attachment.FileName,  contentType = contentType, contents = attachment.Body, orderId = orderId.Value, userId = userId.ToString(), messageId = messageId});
+                                Logger.Info("Debugging Info 8A");
                                 NotifyUsersAttachmentAdded(connection, orderId.Value, user);
                             }
 
@@ -242,11 +243,11 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                 var pref = connection.Query("select AddAttachment, NotificationType from EmailPreferences where UserId = @userId", new { userId = user.ToString() }).SingleOrDefault();
                 if (pref == null || pref.AddAttachment == 1)
                 {
-                    var id = Guid.NewGuid().ToString(); //DO I need this? I don't see a default value in the table.
+                    //var id = Guid.NewGuid().ToString(); //DO I need this? I don't see a default value in the table.
 
                     connection.Execute(
                         "insert into EmailQueueV2 (Id, UserId, OrderId, Pending, NotificationType, Action, Details) values (@id, @userId, @orderId, 1, @notificationType, 'Attachment Added', @details)",
-                        new { id = id, userId = user.ToString(), orderId = orderId, notificationType = pref == null ? EmailPreferences.NotificationTypes.PerEvent.ToString() : pref.NotificationType, details = string.Format("By {0} {1}.", actor.FirstName, actor.Lastname) });
+                        new { id = Guid.NewGuid(), userId = user.ToString(), orderId = orderId, notificationType = pref == null ? EmailPreferences.NotificationTypes.PerEvent.ToString() : pref.NotificationType, details = string.Format("By {0} {1}.", actor.FirstName, actor.Lastname) });
                 }
             }
 
@@ -255,11 +256,11 @@ namespace Smithers.Worker.Jobs.PrePurchasing
         private void NotifyFailure(ReliableSqlConnection connection, int orderId, object userId, string error)
         {
             Logger.Info(string.Format("Debugging Info {0}", 10));
-            var id = Guid.NewGuid().ToString(); //DO I need this? I don't see a default value in the table.
+           // var id = Guid.NewGuid().ToString(); //DO I need this? I don't see a default value in the table.
             Logger.Info(string.Format("Debugging Info {0}", 11));
             connection.Execute(
                 "insert into EmailQueueV2 (Id, UserId, OrderId, Pending, NotificationType, Action, Details) values (@id, @userId, @orderId, 1, @notificationType, @action, 'Unable to add attachment')",
-                new { id = id, userId = userId, orderId = orderId, notificationType = EmailPreferences.NotificationTypes.PerEvent.ToString(), action = error });
+                new { id = Guid.NewGuid(), userId = userId.ToString(), orderId = orderId, notificationType = EmailPreferences.NotificationTypes.PerEvent.ToString(), action = error });
             Logger.Info(string.Format("Debugging Info {0}", 12));
         }
 

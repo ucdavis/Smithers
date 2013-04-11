@@ -153,6 +153,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         {
                             if (!HasAccess(connection, userId, orderId.Value, order.OrderStatusCodeId))
                             {
+                                Logger.Info(string.Format("Debugging Info {0}", 7));
                                 NotifyFailure(connection, orderId.Value, userId, "No Access");
                                 client.DeleteMessage(i);
                                 noAccess++;
@@ -169,7 +170,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                                 {
                                     contentType = "application/octet-stream";
                                 }
-
+                                Logger.Info(string.Format("Debugging Info {0}", 8));
                                 connection.Execute("insert into Attachments (Filename, ContentType, Contents, OrderId, UserId, Category, MessageId) values (@fileName, @contentType, @contents, @orderId, @userId, 'Email Attachment', @messageId)"
                                     , new { fileName = attachment.FileName,  contentType = contentType, contents = attachment.Body, orderId = orderId.Value, userId = userId, messageId = messageId});
                                 NotifyUsersAttachmentAdded(connection, orderId.Value, user);
@@ -180,6 +181,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         {
                             //TODO: Log exception?
                             exceptionCount++;
+                            Logger.Info(string.Format("Debugging Info {0}", 9));
                             NotifyFailure(connection, orderId.Value, userId, "Error");
                             client.DeleteMessage(i);
                             continue;
@@ -206,21 +208,26 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
         private bool HasAccess(ReliableSqlConnection connection, object userId, int orderId, string orderStatusCode)
         {
+            Logger.Info(string.Format("Debugging Info {0}", 1));
             if (ClosedOrders.Contains(orderStatusCode))
             {
+                Logger.Info(string.Format("Debugging Info {0}", 2));
                 if (connection.Query("select id from vClosedAccess where orderid = @orderId and accessuserid = @userId", new {orderId = orderId, userId = userId}).Any())
                 {
+                    Logger.Info(string.Format("Debugging Info {0}", 3));
                     return true;
                 }
             }
             else
             {
+                Logger.Info(string.Format("Debugging Info {0}", 4));
                 if (connection.Query("select Read from vOpenAccess where orderid = @orderId and accessuserid = @userId", new { orderId = orderId, userId = userId }).Any())
                 {
+                    Logger.Info(string.Format("Debugging Info {0}", 5));
                     return true;
                 }
             }
-
+            Logger.Info(string.Format("Debugging Info {0}", 6));
             return false;
         }
 
@@ -245,11 +252,13 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
         private void NotifyFailure(ReliableSqlConnection connection, int orderId, object userId, string error)
         {
+            Logger.Info(string.Format("Debugging Info {0}", 10));
             var id = Guid.NewGuid().ToString(); //DO I need this? I don't see a default value in the table.
-
+            Logger.Info(string.Format("Debugging Info {0}", 11));
             connection.Execute(
                 "insert into EmailQueueV2 (Id, UserId, OrderId, Pending, NotificationType, Action, Details) values (@id, @userId, @orderId, 1, @notificationType, @action, 'Unable to add attachment')",
                 new { id = id, userId = userId, orderId = orderId, notificationType = EmailPreferences.NotificationTypes.PerEvent.ToString(), action = error });
+            Logger.Info(string.Format("Debugging Info {0}", 12));
         }
 
 

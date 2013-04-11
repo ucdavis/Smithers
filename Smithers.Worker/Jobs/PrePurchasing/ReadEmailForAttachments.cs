@@ -18,7 +18,7 @@ using SendGridMail.Transport;
 
 namespace Smithers.Worker.Jobs.PrePurchasing
 {
-    class ReadEmailForAttachments : Job<ReadEmailForAttachments>
+    public class ReadEmailForAttachments : Job<ReadEmailForAttachments>
     {
         private string _connectionString;
         private string _sendGridUserName;
@@ -33,7 +33,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
         public static void Schedule()
         {
-            var job = JobBuilder.Create<SampleJob>().Build();
+            var job = JobBuilder.Create<ReadEmailForAttachments>().Build();
 
             //run trigger every 15 minutes after inital 2 second delay
             var trigger = TriggerBuilder.Create().ForJob(job)

@@ -170,7 +170,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                                 {
                                     contentType = "application/octet-stream";
                                 }
-                                Logger.Info(string.Format("Debugging Info {0}", 8));
+                                Logger.Info(string.Format("Debugging Info {0} -- {1} - {2} - {3} - {4} - {5}", 8, attachment.FileName, contentType, orderId.Value, userId, messageId));
                                 connection.Execute("insert into Attachments (Filename, ContentType, Contents, OrderId, UserId, Category, MessageId) values (@fileName, @contentType, @contents, @orderId, @userId, 'Email Attachment', @messageId)"
                                     , new { fileName = attachment.FileName,  contentType = contentType, contents = attachment.Body, orderId = orderId.Value, userId = userId, messageId = messageId});
                                 NotifyUsersAttachmentAdded(connection, orderId.Value, user);
@@ -179,6 +179,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         }
                         catch (Exception ex)
                         {
+                            Logger.Info(ex.Message);
                             //TODO: Log exception?
                             exceptionCount++;
                             Logger.Info(string.Format("Debugging Info {0}", 9));

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
@@ -170,9 +171,10 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                                 {
                                     contentType = "application/octet-stream";
                                 }
+                                var dateTime = DateTime.UtcNow;
                                 Logger.Info(string.Format("Debugging Info {0} -- {1} - {2} - {3} - {4} - {5}", 8, attachment.FileName, contentType, orderId.Value, userId, messageId));
-                                connection.Execute("insert into Attachments (Id, Filename, ContentType, Contents, OrderId, UserId, Category, MessageId) values (@id, @fileName, @contentType, @contents, @orderId, @userId, 'Email Attachment', @messageId)"
-                                    , new { id = Guid.NewGuid(), fileName = attachment.FileName,  contentType = contentType, contents = attachment.Body, orderId = orderId.Value, userId = userId.ToString(), messageId = messageId});
+                                connection.Execute("insert into Attachments (Id, Filename, ContentType, Contents, OrderId, DateCreated, UserId, Category, MessageId) values (@id, @fileName, @contentType, @contents, @orderId, @dateCreated @userId, 'Email Attachment', @messageId)"
+                                    , new { id = Guid.NewGuid(), fileName = "test", contentType = "application/octet-stream", contents = attachment.Body, orderId = 17542, dateCreated = dateTime, userId = "jsylvest", messageId = "test" });
                                 Logger.Info("Debugging Info 8A");
                                 NotifyUsersAttachmentAdded(connection, orderId.Value, user);
                             }

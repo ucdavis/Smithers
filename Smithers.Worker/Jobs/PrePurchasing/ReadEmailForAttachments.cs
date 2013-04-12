@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using System.Text;
-using System.Threading.Tasks;
+using Dapper;
 using Microsoft.Practices.EnterpriseLibrary.WindowsAzure.TransientFaultHandling.SqlAzure;
 using Microsoft.WindowsAzure;
+using Microsoft.WindowsAzure.ServiceRuntime;
 using OpenPop.Mime.Header;
 using OpenPop.Pop3;
 using Quartz;
 using Quartz.Impl;
-using Dapper;
-using OpenPop;
 using SendGridMail;
 using SendGridMail.Transport;
 
@@ -25,7 +22,6 @@ namespace Smithers.Worker.Jobs.PrePurchasing
         private string _sendGridUserName;
         private string _sendGridPassword;
         private const string SendGridFrom = "opp-noreply@ucdavis.edu";
-        private static readonly List<string> ClosedOrders = new List<string>{"CN", "CP", "OC", "OD"};
 
         private string _hostName;
         private int _port;
@@ -36,9 +32,9 @@ namespace Smithers.Worker.Jobs.PrePurchasing
         {
             var job = JobBuilder.Create<ReadEmailForAttachments>().Build();
 
-            //run trigger every 15 minutes after inital 2 second delay
+            //run trigger every 30 minutes after inital 2 second delay
             var trigger = TriggerBuilder.Create().ForJob(job)
-                            .WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(15))
+                            .WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(30))
                             .StartAt(DateTimeOffset.Now.AddSeconds(2))
                             .Build();
 
@@ -54,8 +50,6 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             //Don't execute unless email is turned on
             if (!string.Equals(readEmail, "Yes", StringComparison.InvariantCultureIgnoreCase)) return;
 
-
-
             //Setup sendGrid info, so we only look it up once per execution call
             _sendGridUserName = CloudConfigurationManager.GetSetting("opp-sendgrid-username");
             _sendGridPassword = CloudConfigurationManager.GetSetting("opp-sendgrid-pass");
@@ -70,9 +64,6 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
             ReadEmails();
 
-            //System.Threading.Thread.Sleep(TimeSpan.FromSeconds(2));
-            //Logger.Info("Job is doing some heavy work here");
-            //System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
         }
 
 
@@ -91,6 +82,8 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
             using (connection)
             {
+
+
                 using (Pop3Client client = new Pop3Client())
                 {
                     // Connect to the server
@@ -114,23 +107,20 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         var messageId = headers.MessageId; // Can use to check if we have already processed.
                         var user = connection.Query("select Id, FirstName, LastName from Users where Email = @mailEmail", new { mailEmail = from.Address.ToLower() }).SingleOrDefault();
 
-                        var userId = user == null ? null : user.Id;
+                        string userId = user == null ? null : user.Id;
                         if (string.IsNullOrWhiteSpace(userId))
                         {
                             //Unique User not Found. Delete message
                             client.DeleteMessage(i);
                             userNotFound++;
-                            //Logger.Info(string.Format("User not found: {0}", from.Address.ToLower()));
 
                             continue;
                         }
                         if (connection.Query("select Id from Attachments where MessageId = @messageId", new { messageId = messageId}).Any())
-                            //TODO: The MessageId field 
                         {
                             //This email was already processed, just delete it.
                             client.DeleteMessage(i);
                             duplicateEmail++;
-                            //Logger.Info(string.Format("Duplicate Email Message Id: {0}", messageId));
 
                             continue;
                         }
@@ -154,7 +144,6 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         {
                             if (!HasAccess(connection, userId, orderId.Value, order.OrderStatusCodeId))
                             {
-                                Logger.Info(string.Format("Debugging Info {0}", 7));
                                 NotifyFailure(connection, orderId.Value, userId, "No Access");
                                 client.DeleteMessage(i);
                                 noAccess++;
@@ -166,28 +155,44 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                             foreach (var attachment in message.FindAllAttachments())
                             {
                                 attachmentFound = true;
-                                var contentType = attachment.ContentType.ToString();
+                                string contentType = attachment.ContentType.ToString();
                                 if (string.IsNullOrWhiteSpace(contentType))
                                 {
                                     contentType = "application/octet-stream";
                                 }
+                                else
+                                {
+                                    try
+                                    {
+                                        if (contentType.Contains(";")) //Sometimes contains the name for some reason. We don't want that.
+                                        {
+                                            contentType = contentType.Split(';')[0];
+                                        }
+                                    }
+                                    catch (Exception)
+                                    {
+                                        contentType = "application/octet-stream";
+                                    }
+                                }
                                 var dateTime = DateTime.UtcNow;
 
-                                Logger.Info(string.Format("Debugging Info {0} -- {1} - {2} - {3} - {4} - {5}", 8, attachment.FileName, contentType, orderId.Value, userId, messageId));
                                 connection.Execute("insert into Attachments (Id, Filename, ContentType, Contents, OrderId, DateCreated, UserId, Category, MessageId) values (@id, @fileName, @contentType, @contents, @orderId, @dateCreated, @userId, 'Email Attachment', @messageId)"
-                                    , new { id = Guid.NewGuid(), fileName = "Test", contentType = contentType, contents = attachment.Body, orderId = orderId.Value, dateCreated = dateTime, userId = userId.ToString(), messageId = messageId });
-                                Logger.Info("Debugging Info 8A");
-                                NotifyUsersAttachmentAdded(connection, orderId.Value, user);
+                                    , new { id = Guid.NewGuid(), fileName = attachment.FileName, contentType = contentType, contents = attachment.Body, orderId = orderId.Value, dateCreated = dateTime, userId = userId, messageId = messageId });
+
+                                string firstName = user.FirstName;
+                                string lastName = user.LastName;
+                                NotifyUsersAttachmentAdded(connection, orderId.Value, firstName, lastName);
+                            }
+                            if (!attachmentFound)
+                            {
+                                NotifyFailure(connection, orderId.Value, userId, "No Attachment Found");
                             }
 
                         }
                         catch (Exception ex)
                         {
-                            throw ex;
-                            Logger.Info(ex.Message);
-                            //TODO: Log exception?
+                            //Logger.Info(ex.Message); //We may want to turn this on if we start getting exceptions, for now we just have the log count
                             exceptionCount++;
-                            Logger.Info(string.Format("Debugging Info {0}", 9));
                             NotifyFailure(connection, orderId.Value, userId, "Error");
                             client.DeleteMessage(i);
                             continue;
@@ -212,60 +217,51 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             }
         }
 
-        private bool HasAccess(ReliableSqlConnection connection, object userId, int orderId, string orderStatusCode)
+        private bool HasAccess(ReliableSqlConnection connection, string userId, int orderId, string orderStatusCode)
         {
-            Logger.Info(string.Format("Debugging Info {0} - {1}", 1, orderStatusCode));
-            //if (ClosedOrders.Contains(orderStatusCode))
             if (orderStatusCode == "CN" || orderStatusCode == "CP" || orderStatusCode == "OC" || orderStatusCode == "OD")
             {
-                Logger.Info(string.Format("Debugging Info {0}", 2));
-                if (connection.Query("select id from vClosedAccess where orderid = @orderId and accessuserid = @userId", new {orderId = orderId, userId = userId.ToString()}).Any())
+                if (connection.Query("select id from vClosedAccess where orderid = @orderId and accessuserid = @userId", new {orderId = orderId, userId = userId}).Any())
                 {
-                    Logger.Info(string.Format("Debugging Info {0}", 3));
                     return true;
                 }
             }
             else
             {
-                Logger.Info(string.Format("Debugging Info {0}", 4));
-                if (connection.Query("select Read from vOpenAccess where orderid = @orderId and accessuserid = @userId", new { orderId = orderId, userId = userId.ToString() }).Any())
+                if (connection.Query("select [Read] from vOpenAccess where orderid = @orderId and accessuserid = @userId", new { orderId = orderId, userId = userId }).Any())
                 {
-                    Logger.Info(string.Format("Debugging Info {0}", 5));
                     return true;
                 }
             }
-            Logger.Info(string.Format("Debugging Info {0}", 6));
             return false;
         }
 
-        private void NotifyUsersAttachmentAdded(ReliableSqlConnection connection, int orderId, dynamic actor)
+        private void NotifyUsersAttachmentAdded(ReliableSqlConnection connection, int orderId, string firstName, string lastName)
         {
             var users = connection.Query("select distinct UserId from OrderTracking where OrderId = @orderId", new { orderId = orderId }).ToList();
 
             foreach (var user in users)
             {
-                var pref = connection.Query("select AddAttachment, NotificationType from EmailPreferences where Id = @id", new { id = user.ToString() }).SingleOrDefault();
-                if (pref == null || pref.AddAttachment == 1)
+                string localUser = user.UserId.ToString();
+                var pref = connection.Query("select AddAttachment, NotificationType from EmailPreferences where Id = @id", new { id = localUser }).SingleOrDefault();
+                if (pref == null || pref.AddAttachment == true)
                 {
-                    //var id = Guid.NewGuid().ToString(); //DO I need this? I don't see a default value in the table.
-
+                    string localEventType = pref == null
+                                                ? EmailPreferences.NotificationTypes.PerEvent.ToString()
+                                                : pref.NotificationType;
                     connection.Execute(
                         "insert into EmailQueueV2 (Id, UserId, OrderId, Pending, NotificationType, Action, Details) values (@id, @userId, @orderId, 1, @notificationType, 'Attachment Added', @details)",
-                        new { id = Guid.NewGuid(), userId = user.ToString(), orderId = orderId, notificationType = pref == null ? EmailPreferences.NotificationTypes.PerEvent.ToString() : pref.NotificationType, details = string.Format("By {0} {1}.", actor.FirstName, actor.Lastname) });
+                        new { id = Guid.NewGuid(), userId = localUser, orderId = orderId, notificationType = localEventType, details = string.Format("By {0} {1}.", firstName, lastName) });
                 }
             }
 
         }
 
-        private void NotifyFailure(ReliableSqlConnection connection, int orderId, object userId, string error)
+        private void NotifyFailure(ReliableSqlConnection connection, int orderId, string userId, string error)
         {
-            Logger.Info(string.Format("Debugging Info {0}", 10));
-           // var id = Guid.NewGuid().ToString(); //DO I need this? I don't see a default value in the table.
-            Logger.Info(string.Format("Debugging Info {0}", 11));
             connection.Execute(
                 "insert into EmailQueueV2 (Id, UserId, OrderId, Pending, NotificationType, Action, Details) values (@id, @userId, @orderId, 1, @notificationType, @action, 'Unable to add attachment')",
-                new { id = Guid.NewGuid(), userId = userId.ToString(), orderId = orderId, notificationType = EmailPreferences.NotificationTypes.PerEvent.ToString(), action = error });
-            Logger.Info(string.Format("Debugging Info {0}", 12));
+                new { id = Guid.NewGuid(), userId = userId, orderId = orderId, notificationType = EmailPreferences.NotificationTypes.PerEvent.ToString(), action = error });
         }
 
 
@@ -288,14 +284,18 @@ namespace Smithers.Worker.Jobs.PrePurchasing
 
         private void SendSingleEmail(string email, string subject)
         {
-            var sgMessage = SendGrid.GetInstance();
-            sgMessage.From = new MailAddress(SendGridFrom, "UCD PrePurchasing No Reply");
-            sgMessage.Subject = subject;
-            sgMessage.AddTo(email);
-            sgMessage.Html = "<p>You tried to add an attachment by emailing oppattach@ucdavis.edu but the related order was not found. The subject line must be in the exact format:</p><p>Request # xxxx-xxxxxxx</p><p>You may copy this from the Order Review Page</p>";
+            if (RoleEnvironment.IsAvailable && RoleEnvironment.IsEmulated == false)
+            {
+                var sgMessage = SendGrid.GetInstance();
+                sgMessage.From = new MailAddress(SendGridFrom, "UCD PrePurchasing No Reply");
+                sgMessage.Subject = subject;
+                sgMessage.AddTo(email);
+                sgMessage.Html =
+                    "<p>You tried to add an attachment by emailing oppattach@ucdavis.edu but the related order was not found. The subject line must be in the exact format:</p><p>Request # xxxx-xxxxxxx</p><p>You may copy this from the Order Review Page</p>";
 
-            var transport = SMTP.GetInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
-            transport.Deliver(sgMessage);   
+                var transport = SMTP.GetInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
+                transport.Deliver(sgMessage);
+            }
         }
     }
 }

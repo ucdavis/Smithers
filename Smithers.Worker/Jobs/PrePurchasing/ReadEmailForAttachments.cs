@@ -174,7 +174,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                                         contentType = "application/octet-stream";
                                     }
                                 }
-                                var dateTime = DateTime.UtcNow;
+                                var dateTime = DateTime.Now.InPacificTimeZone();
 
                                 connection.Execute("insert into Attachments (Id, Filename, ContentType, Contents, OrderId, DateCreated, UserId, Category, MessageId) values (@id, @fileName, @contentType, @contents, @orderId, @dateCreated, @userId, 'Email Attachment', @messageId)"
                                     , new { id = Guid.NewGuid(), fileName = attachment.FileName, contentType = contentType, contents = attachment.Body, orderId = orderId.Value, dateCreated = dateTime, userId = userId, messageId = messageId });

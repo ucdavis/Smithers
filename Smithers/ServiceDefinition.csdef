@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ServiceDefinition name="Smithers" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2012-10.1.8">
+<ServiceDefinition name="Smithers" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2013-03.2.0">
   <WorkerRole name="Smithers.Worker" vmsize="ExtraSmall">
     <Imports>
       <Import moduleName="Diagnostics" />
@@ -21,14 +21,13 @@
       <Setting name="opp-sendgrid-username" />
       <Setting name="opp-sendgrid-pass" />
       <Setting name="opp-send-email" />
-      <Setting name="opp-read-email"/>
-      <Setting name="opp-pop-host-name"/>
-      <Setting name="opp-pop-port"/>
-      <Setting name="opp-pop-user-name"/>
-      <Setting name="opp-pop-password"/>
+      <Setting name="opp-read-email" />
+      <Setting name="opp-pop-host-name" />
+      <Setting name="opp-pop-port" />
+      <Setting name="opp-pop-user-name" />
+      <Setting name="opp-pop-password" />
     </ConfigurationSettings>
-    <Runtime executionContext="elevated">
-    </Runtime>
+    <Runtime executionContext="elevated"></Runtime>
     <Endpoints>
       <InputEndpoint name="Web" protocol="tcp" port="80" />
     </Endpoints>

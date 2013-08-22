@@ -36,7 +36,7 @@ namespace Smithers.Worker
             }
             else //local debugging
             {
-                SampleJob.Schedule();    
+                SampleJob.Schedule();
             }
 
             cancelSource.Token.WaitHandle.WaitOne();

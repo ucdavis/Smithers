@@ -1,18 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "Smithers", "Smithers\Smithers.ccproj", "{5DDF96A6-970C-42D1-A4FA-B4B42BEE13D9}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Smithers.Worker", "Smithers.Worker\Smithers.Worker.csproj", "{63E262A6-B4BE-4590-B76A-9747027ED731}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Smithers.AzureLogAppender", "Smithers.AzureLogAppender\Smithers.AzureLogAppender.csproj", "{42D612DE-C84A-4B4E-B58D-5BBC47AA4BAA}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{C1C9A94E-813B-4F33-AA57-F46BC9FFF3C7}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\NuGet.Config = .nuget\NuGet.Config
 		.nuget\NuGet.exe = .nuget\NuGet.exe
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
+EndProject
+Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "Smithers", "Smithers\Smithers.ccproj", "{5DDF96A6-970C-42D1-A4FA-B4B42BEE13D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Smithers.Worker", "Smithers.Worker\Smithers.Worker.csproj", "{63E262A6-B4BE-4590-B76A-9747027ED731}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Smithers.AzureLogAppender", "Smithers.AzureLogAppender\Smithers.AzureLogAppender.csproj", "{42D612DE-C84A-4B4E-B58D-5BBC47AA4BAA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

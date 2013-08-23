@@ -7,6 +7,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Dapper;
 using Microsoft.Practices.EnterpriseLibrary.WindowsAzure.TransientFaultHandling.SqlAzure;
+using Microsoft.WindowsAzure;
 using Quartz;
 using Quartz.Impl;
 using SendGridMail;
@@ -43,16 +44,21 @@ namespace Smithers.Worker.Jobs.Evaluations
 
         public override void ExecuteJob(IJobExecutionContext context)
         {
+            _connectionString = CloudConfigurationManager.GetSetting("ace-connection");
+
             var body = GetEmailBody();
+            var emailList = GetEmailList();
 
-            using (var smtpClient = new SmtpClient("mailtrap.io", 2525))
+            if (emailList.Any())
             {
-                smtpClient.UseDefaultCredentials = false;
-                smtpClient.Credentials = new NetworkCredential("evaluations-599e350d576fda8b", "5c9eb64e1d499ff8");
-
-                for (int i = 0; i < 100; i++)
+                using (var smtpClient = new SmtpClient("mailtrap.io", 2525))
                 {
-                    var message = new MailMessage
+                    smtpClient.UseDefaultCredentials = false;
+                    smtpClient.Credentials = new NetworkCredential("evaluations-599e350d576fda8b", "5c9eb64e1d499ff8");
+
+                    foreach (var email in emailList)
+                    {
+                        var message = new MailMessage
                         {
                             From = new MailAddress(SendGridFrom),
                             Subject = "UC Davis Course Evaluation Notification",
@@ -60,10 +66,11 @@ namespace Smithers.Worker.Jobs.Evaluations
                             Body = body
                         };
 
-                    message.To.Add(string.Format("srkirkland{0}@ucdavis.edu", i));
+                        message.To.Add("fake" + email);
 
-                    smtpClient.Send(message);
-                }
+                        smtpClient.Send(message);
+                    }
+                }        
             }
         }
 
@@ -132,7 +139,7 @@ namespace Smithers.Worker.Jobs.Evaluations
             }
         }
 
-        public string[] EmailList()
+        public string[] GetEmailList()
         {
             string[] studentEmailsWithOpenEvaluations;
 

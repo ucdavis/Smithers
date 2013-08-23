@@ -25,6 +25,7 @@
       <Setting name="opp-pop-port" value="995" />
       <Setting name="opp-pop-user-name" value="NotTheUserName" />
       <Setting name="opp-pop-password" value="NotThePassword" />
+      <Setting name="ace-connection" value="" />
     </ConfigurationSettings>
     <Certificates>
       <Certificate name="smithersbot" thumbprint="1F0BDDE60008AEEA132183A89EA33ACB33AC1879" thumbprintAlgorithm="sha1" />

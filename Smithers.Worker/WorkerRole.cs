@@ -37,7 +37,7 @@ namespace Smithers.Worker
             }
             else //local debugging
             {
-                //StudentEmailSender.Schedule();
+                StudentEmailSender.Schedule();
                 SampleJob.Schedule();
             }
 

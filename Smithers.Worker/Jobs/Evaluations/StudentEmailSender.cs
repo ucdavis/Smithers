@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Dapper;
 using Microsoft.Practices.EnterpriseLibrary.WindowsAzure.TransientFaultHandling.SqlAzure;
 using Quartz;
@@ -42,9 +43,35 @@ namespace Smithers.Worker.Jobs.Evaluations
 
         public override void ExecuteJob(IJobExecutionContext context)
         {
+            var body = GetEmailBody();
+
+            using (var smtpClient = new SmtpClient("mailtrap.io", 2525))
+            {
+                smtpClient.UseDefaultCredentials = false;
+                smtpClient.Credentials = new NetworkCredential("evaluations-599e350d576fda8b", "5c9eb64e1d499ff8");
+
+                for (int i = 0; i < 100; i++)
+                {
+                    var message = new MailMessage
+                        {
+                            From = new MailAddress(SendGridFrom),
+                            Subject = "UC Davis Course Evaluation Notification",
+                            IsBodyHtml = true,
+                            Body = body
+                        };
+
+                    message.To.Add(string.Format("srkirkland{0}@ucdavis.edu", i));
+
+                    smtpClient.Send(message);
+                }
+            }
+        }
+
+        public void SendWithBulkmail()
+        {
             var certPath = Path.Combine(Environment.GetEnvironmentVariable("RoleRoot") + @"\", @"approot\smithersbot.ucdavis.edu.cer");
-        
-            using (var client = new SmtpClient("bulkmail-dev.ucdavis.edu") {UseDefaultCredentials = false})
+
+            using (var client = new SmtpClient("bulkmail-dev.ucdavis.edu") { UseDefaultCredentials = false })
             {
                 client.ClientCertificates.Add(new X509Certificate(certPath, "[]"));
                 client.EnableSsl = true;
@@ -58,7 +85,7 @@ namespace Smithers.Worker.Jobs.Evaluations
                 {
                     Logger.Error("Didn't work", ex);
                 }
-            }
+            }            
         }
 
         public void SendWithSendgrid()
@@ -127,6 +154,30 @@ where [start] < GETUTCDATE()
             }
 
             return studentEmailsWithOpenEvaluations;
+        }
+
+        private static string GetEmailBody()
+        {
+            const string link = @"<a href='https://eval.ucdavis.edu'>https://eval.ucdavis.edu</a>";
+            var body = new StringBuilder();
+
+            body.AppendFormat(@"<p>
+	Dear UC Davis Student,</p>
+<p style='margin-left: 40px;'>
+	You have one or more course evaluations ready for you to view. &nbsp;Please visit the below link for more information and to fill out your evaluations.</p>
+<p>
+	{0}</p>
+<p style='margin-left: 40px;'>
+	Thank you for taking part in this important process, your feedback is greatly appreciated,</p>
+<p>
+	&nbsp;</p>
+<p>
+	- The UC Davis Course Evaluation System</p>
+<hr />
+<p>
+	Please do not respond to this email directly. &nbsp;For more information or other questions, please visit&nbsp;{0}</p>
+", link);
+            return body.ToString();
         }
     }
 }

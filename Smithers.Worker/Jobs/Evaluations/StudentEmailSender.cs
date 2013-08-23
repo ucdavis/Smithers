@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Dapper;
@@ -21,6 +22,7 @@ namespace Smithers.Worker.Jobs.Evaluations
         private string _sendGridPassword;
         private string _connectionString;
         private const string SendGridFrom = "eval-noreply@ucdavis.edu";
+        private const string EvalLink = @"<a href='https://eval.ucdavis.edu'>https://eval.ucdavis.edu</a>";
 
         public static void Schedule()
         {
@@ -46,7 +48,7 @@ namespace Smithers.Worker.Jobs.Evaluations
         {
             _connectionString = CloudConfigurationManager.GetSetting("ace-connection");
 
-            var body = GetEmailBody();
+            var body = GetHtmlBody();
             var emailList = GetEmailList();
 
             if (emailList.Any())
@@ -68,6 +70,7 @@ namespace Smithers.Worker.Jobs.Evaluations
                                     Body = body
                                 };
 
+                            message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(GetPlainTextBody(), null, "text/plain"));
                             message.To.Add("fake" + email);
 
                             smtpClient.Send(message);
@@ -127,9 +130,7 @@ namespace Smithers.Worker.Jobs.Evaluations
             sgMessage.Subject = "UC Davis Course Evaluation Notification";
 
             sgMessage.Html = string.Format("<a href=\"{0}\">{0}</a>", "https://eval.ucdavis.edu");
-            sgMessage.Text =
-                @"Dear UC Davis Student- You have one or more course evaluations ready for you to view.  
-                        Please visit https://eval.ucdavis.edu for more information and to fill out your evaluations.";
+            sgMessage.Text = GetPlainTextBody();
 
             for (int i = 0; i < 1000; i++)
             {
@@ -170,9 +171,8 @@ where [start] < GETUTCDATE()
             return studentEmailsWithOpenEvaluations;
         }
 
-        private static string GetEmailBody()
+        private static string GetHtmlBody()
         {
-            const string link = @"<a href='https://eval.ucdavis.edu'>https://eval.ucdavis.edu</a>";
             var body = new StringBuilder();
 
             body.AppendFormat(@"<p>
@@ -190,8 +190,15 @@ where [start] < GETUTCDATE()
 <hr />
 <p>
 	Please do not respond to this email directly. &nbsp;For more information or other questions, please visit&nbsp;{0}</p>
-", link);
+", EvalLink);
             return body.ToString();
+        }
+
+        private static string GetPlainTextBody()
+        {
+            return
+                string.Format(@"Dear UC Davis Student- You have one or more course evaluations ready for you to view.  
+                        Please visit https://eval.ucdavis.edu for more information and to fill out your evaluations.");
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Smithers.Worker.Jobs.Evaluations
             var jobDetails = JobBuilder.Create<StudentEmailSender>().Build();
 
             var quick =
-                TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(2))
+                TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(10))
                               .Build();
 
             //run daily trigger after inital 30 second delay to give priority to warmup
@@ -50,7 +50,8 @@ namespace Smithers.Worker.Jobs.Evaluations
             if (!string.Equals(sendEmail, "Yes", StringComparison.InvariantCultureIgnoreCase)) return;
             
             //Setup sendGrid info, so we only look it up once per execution call
-            
+            _sendGridUserName = "azure_ed741bc49fa79b0d32c8d660fb015d3a@azure.com";
+            _sendGridPassword = "fake";
 
             //var studentsToEmail = EmailList();
 
@@ -59,27 +60,29 @@ namespace Smithers.Worker.Jobs.Evaluations
 
             //}
 
-            try
-            {
-                var sgMessage = SendGrid.GetInstance();
-                var transport = SMTP.GetInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
-                sgMessage.From = new MailAddress(SendGridFrom, "UCD Evaluations No Reply");
+            var sgMessage = SendGrid.GetInstance();
+            var transport = SMTP.GetInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
+            sgMessage.From = new MailAddress(SendGridFrom, "UCD Evaluations No Reply");
 
-                sgMessage.Subject = "UC Davis Course Evaluation Notification";
+            sgMessage.Subject = "UC Davis Course Evaluation Notification";
 
-                sgMessage.Html = string.Format("<a href=\"{0}\">{0}</a>", "https://eval.ucdavis.edu");
-                sgMessage.Text =
-                    @"Dear UC Davis Student- You have one or more course evaluations ready for you to view.  
+            sgMessage.Html = string.Format("<a href=\"{0}\">{0}</a>", "https://eval.ucdavis.edu");
+            sgMessage.Text =
+                @"Dear UC Davis Student- You have one or more course evaluations ready for you to view.  
                         Please visit https://eval.ucdavis.edu for more information and to fill out your evaluations.";
 
-                sgMessage.Header.AddTo(new[] { "srkirkland@ucdavis.edu", "student@mailinator.com", "fake@mailinator.com", "studentfake@mailinator.com" });
-                sgMessage.AddTo("srkirkland@ucdaivs.edu");
-                
-                transport.Deliver(sgMessage);
-            }
-            catch (Exception ex)
+            for (int i = 0; i < 1000; i++)
             {
-                Logger.Error("New Ace sendgrid failed", ex);
+                try
+                {
+                    sgMessage.To = new[] {new MailAddress(string.Format("student{0}@mailinator.com", i))};
+
+                    transport.Deliver(sgMessage);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(string.Format("Failed sending to {0}", "fakeemail@mailinator.com"), ex);
+                }
             }
         }
 

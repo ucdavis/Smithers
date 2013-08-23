@@ -29,18 +29,13 @@ namespace Smithers.Worker.Jobs.Evaluations
             // create job
             var jobDetails = JobBuilder.Create<StudentEmailSender>().Build();
 
-            var quick =
-                TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(10))
-                              .Build();
-
             //run daily trigger after inital 30 second delay to give priority to warmup
-            var dailyTrigger = TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(16, 30).InPacificTimeZone())
+            var dailyTrigger = TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(17, 30).InPacificTimeZone())
                                              .StartAt(DateTimeOffset.Now.AddSeconds(30))
                                              .Build();
 
             var sched = StdSchedulerFactory.GetDefaultScheduler();
-            sched.ScheduleJob(jobDetails, quick);
-            //sched.ScheduleJob(dailyTrigger);
+            sched.ScheduleJob(jobDetails, dailyTrigger);
             sched.Start();
         }
 
@@ -48,11 +43,13 @@ namespace Smithers.Worker.Jobs.Evaluations
         {
             _connectionString = CloudConfigurationManager.GetSetting("ace-connection");
 
-            var body = GetHtmlBody();
             var emailList = GetEmailList();
 
             if (emailList.Any())
             {
+                var plainBody = GetPlainTextBody();
+                var htmlBody = GetHtmlBody();
+                
                 using (var smtpClient = new SmtpClient("mailtrap.io", 2525))
                 {
                     smtpClient.UseDefaultCredentials = false;
@@ -66,10 +63,10 @@ namespace Smithers.Worker.Jobs.Evaluations
                                 {
                                     From = new MailAddress(SendGridFrom),
                                     Subject = "UC Davis Course Evaluation Notification",
-                                    Body = GetPlainTextBody()
+                                    Body = plainBody
                                 };
 
-                            message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(body, null, MediaTypeNames.Text.Html));
+                            message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(htmlBody, null, MediaTypeNames.Text.Html));
                             message.To.Add("fake" + email);
 
                             smtpClient.Send(message);

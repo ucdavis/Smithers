@@ -32,33 +32,29 @@ namespace Smithers.AzureLogAppender
 
         protected override void Append(LoggingEvent loggingEvent)
         {
-            Action doWriteToLog = () =>
-                {
-                    try
+            try
+            {
+                var log = new LogEntry
                     {
-                        var log = new LogEntry
-                            {
-                                RoleInstance = RoleEnvironment.CurrentRoleInstance.Id,
-                                DeploymentId = RoleEnvironment.DeploymentId,
-                                Timestamp = loggingEvent.TimeStamp,
-                                Message = loggingEvent.RenderedMessage,
-                                Level = loggingEvent.Level.Name,
-                                LoggerName = loggingEvent.LoggerName,
-                                Domain = loggingEvent.Domain,
-                                ThreadName = loggingEvent.ThreadName,
-                                Identity = loggingEvent.Identity
-                            };
+                        RoleInstance = RoleEnvironment.CurrentRoleInstance.Id,
+                        DeploymentId = RoleEnvironment.DeploymentId,
+                        Timestamp = loggingEvent.TimeStamp,
+                        Message = loggingEvent.RenderedMessage,
+                        Level = loggingEvent.Level.Name,
+                        LoggerName = loggingEvent.LoggerName,
+                        Domain = loggingEvent.Domain,
+                        ThreadName = loggingEvent.ThreadName,
+                        Identity = loggingEvent.Identity
+                    };
 
-                        TableOperation insertOperation = TableOperation.Insert(log);
-                        _table.Execute(insertOperation);
-                    }
-                    catch (DataServiceRequestException e)
-                    {
-                        ErrorHandler.Error(string.Format("{0}: Could not write log entry to {1}: {2}",
-                                                         GetType().AssemblyQualifiedName, _tableEndpoint, e.Message));
-                    }
-                };
-            doWriteToLog.BeginInvoke(null, null);
+                TableOperation insertOperation = TableOperation.Insert(log);
+                _table.Execute(insertOperation);
+            }
+            catch (DataServiceRequestException e)
+            {
+                ErrorHandler.Error(string.Format("{0}: Could not write log entry to {1}: {2}",
+                                                 GetType().AssemblyQualifiedName, _tableEndpoint, e.Message));
+            }
         }
     }
 }

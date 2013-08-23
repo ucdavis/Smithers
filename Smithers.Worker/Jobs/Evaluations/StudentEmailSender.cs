@@ -28,7 +28,7 @@ namespace Smithers.Worker.Jobs.Evaluations
             var jobDetails = JobBuilder.Create<StudentEmailSender>().Build();
 
             var quick =
-                TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(2))
+                TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(10))
                               .Build();
 
             //run daily trigger after inital 30 second delay to give priority to warmup
@@ -58,17 +58,24 @@ namespace Smithers.Worker.Jobs.Evaluations
 
                     foreach (var email in emailList)
                     {
-                        var message = new MailMessage
+                        try
                         {
-                            From = new MailAddress(SendGridFrom),
-                            Subject = "UC Davis Course Evaluation Notification",
-                            IsBodyHtml = true,
-                            Body = body
-                        };
+                            var message = new MailMessage
+                                {
+                                    From = new MailAddress(SendGridFrom),
+                                    Subject = "UC Davis Course Evaluation Notification",
+                                    IsBodyHtml = true,
+                                    Body = body
+                                };
 
-                        message.To.Add("fake" + email);
+                            message.To.Add("fake" + email);
 
-                        smtpClient.Send(message);
+                            smtpClient.Send(message);
+                        }
+                        catch (Exception exception)
+                        {
+                            Logger.ErrorFormat("Couldn't send email to {0}", exception, email);
+                        }
                     }
                 }        
             }
@@ -171,7 +178,7 @@ where [start] < GETUTCDATE()
             body.AppendFormat(@"<p>
 	Dear UC Davis Student,</p>
 <p style='margin-left: 40px;'>
-	You have one or more course evaluations ready for you to view. &nbsp;Please visit the below link for more information and to fill out your evaluations.</p>
+	You have one or more course evaluations ready for you to complete. &nbsp;Please visit the below link for more information and to fill out your evaluations.</p>
 <p>
 	{0}</p>
 <p style='margin-left: 40px;'>

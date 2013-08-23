@@ -27,9 +27,13 @@
       <Setting name="opp-pop-user-name" />
       <Setting name="opp-pop-password" />
     </ConfigurationSettings>
-    <Runtime executionContext="elevated"></Runtime>
+    <Runtime executionContext="elevated">
+    </Runtime>
     <Endpoints>
       <InputEndpoint name="Web" protocol="tcp" port="80" />
     </Endpoints>
+    <Certificates>
+      <Certificate name="smithersbot" storeLocation="LocalMachine" storeName="My" />
+    </Certificates>
   </WorkerRole>
 </ServiceDefinition>

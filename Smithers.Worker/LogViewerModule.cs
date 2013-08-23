@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Mail;
+using System.Security.Cryptography.X509Certificates;
 using System.Web.Security;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage;
@@ -11,6 +13,7 @@ using Nancy;
 using System.Dynamic;
 using Nancy.Cookies;
 using Nancy.Responses;
+using log4net.Repository.Hierarchy;
 
 namespace Smithers.Worker
 {
@@ -22,6 +25,32 @@ namespace Smithers.Worker
 
         public LogViewerModule()
         {
+            Get["/config"] = _ => CloudConfigurationManager.GetSetting("WebUrl");
+            
+            Get["/email"] = _ =>
+                {
+                    var certPath = Path.Combine(Environment.GetEnvironmentVariable("RoleRoot") + @"\",
+                                                @"approot\smithersbot.ucdavis.edu.cer");
+
+                    using (var client = new SmtpClient("bulkmail-dev.ucdavis.edu") {UseDefaultCredentials = false})
+                    {
+                        client.ClientCertificates.Add(new X509Certificate(certPath, "[]"));
+                        client.EnableSsl = true;
+                        client.Port = 587;
+
+                        try
+                        {
+                            client.Send("srkirkland@ucdavis.edu", "srkirkland@ucdavis.edu", "bulkmail sample",
+                                        "sample email");
+                            return "Email sent";
+                        }
+                        catch (Exception ex)
+                        {
+                            return string.Format("Email failed because: {0}", ex.Message);
+                        }
+                    }
+                };
+
             Get["/auth"] = _ =>
                 {
                     var user = GetUser();

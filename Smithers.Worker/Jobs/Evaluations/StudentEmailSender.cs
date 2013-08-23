@@ -1,13 +1,11 @@
 using System;
-using System.Collections.Generic;
-using System.Data;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using System.Text;
+using System.Security.Cryptography.X509Certificates;
 using Dapper;
 using Microsoft.Practices.EnterpriseLibrary.WindowsAzure.TransientFaultHandling.SqlAzure;
-using Microsoft.WindowsAzure;
 using Quartz;
 using Quartz.Impl;
 using SendGridMail;
@@ -28,7 +26,7 @@ namespace Smithers.Worker.Jobs.Evaluations
             var jobDetails = JobBuilder.Create<StudentEmailSender>().Build();
 
             var quick =
-                TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(10))
+                TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(2))
                               .Build();
 
             //run daily trigger after inital 30 second delay to give priority to warmup
@@ -44,14 +42,35 @@ namespace Smithers.Worker.Jobs.Evaluations
 
         public override void ExecuteJob(IJobExecutionContext context)
         {
+            var certPath = Path.Combine(Environment.GetEnvironmentVariable("RoleRoot") + @"\", @"approot\smithersbot.ucdavis.edu.cer");
+        
+            using (var client = new SmtpClient("bulkmail-dev.ucdavis.edu") {UseDefaultCredentials = false})
+            {
+                client.ClientCertificates.Add(new X509Certificate(certPath, "[]"));
+                client.EnableSsl = true;
+                client.Port = 587;
+
+                try
+                {
+                    client.Send("srkirkland@ucdavis.edu", "srkirkland@ucdavis.edu", "bulkmail sample", "sample email");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("Didn't work", ex);
+                }
+            }
+        }
+
+        public void SendWithSendgrid()
+        {
             var sendEmail = "Yes"; //CloudConfigurationManager.GetSetting("opp-send-email");
-            
+
             //Don't execute unless email is turned on
             if (!string.Equals(sendEmail, "Yes", StringComparison.InvariantCultureIgnoreCase)) return;
-            
+
             //Setup sendGrid info, so we only look it up once per execution call
             _sendGridUserName = "azure_ed741bc49fa79b0d32c8d660fb015d3a@azure.com";
-            _sendGridPassword = "fake";
+            _sendGridPassword = "[]";
 
             //var studentsToEmail = EmailList();
 

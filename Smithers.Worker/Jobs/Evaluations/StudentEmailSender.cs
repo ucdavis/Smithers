@@ -66,11 +66,10 @@ namespace Smithers.Worker.Jobs.Evaluations
                                 {
                                     From = new MailAddress(SendGridFrom),
                                     Subject = "UC Davis Course Evaluation Notification",
-                                    IsBodyHtml = true,
-                                    Body = body
+                                    Body = GetPlainTextBody()
                                 };
 
-                            message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(GetPlainTextBody(), null, "text/plain"));
+                            message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(body, null, MediaTypeNames.Text.Html));
                             message.To.Add("fake" + email);
 
                             smtpClient.Send(message);

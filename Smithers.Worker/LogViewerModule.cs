@@ -98,20 +98,11 @@ namespace Smithers.Worker
                     CloudTable table = tableClient.GetTableReference("LogEntries");
 
                     var now = DateTime.Now;
-                    var lastMonth = now.AddMonths(-1);
-
                     var filterCurrent = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal,
                                                                            string.Format("{0}-{1:D2}", now.Year,
                                                                                          now.Month));
 
-                    var filterLast = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal,
-                                                                           string.Format("{0}-{1:D2}", lastMonth.Year,
-                                                                                         lastMonth.Month));
-
-                    var query =
-                        new TableQuery().Where(
-                            TableQuery.CombineFilters(filterCurrent, TableOperators.Or, filterLast)
-                            );
+                    var query = new TableQuery().Where(filterCurrent);
 
                     var limitResults = Request.Query.more.HasValue == false;
 

@@ -8,6 +8,7 @@ using Nancy.Hosting.Self;
 using Quartz.Impl;
 using Smithers.Worker.Jobs;
 using Smithers.Worker.Jobs.PrePurchasing;
+using Smithers.Worker.Jobs.Evaluations;
 
 namespace Smithers.Worker
 {
@@ -36,6 +37,7 @@ namespace Smithers.Worker
             }
             else //local debugging
             {
+                StudentEmailSender.Schedule();
                 SampleJob.Schedule();
             }
 

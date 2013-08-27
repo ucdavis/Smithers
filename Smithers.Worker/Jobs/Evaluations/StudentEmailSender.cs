@@ -49,7 +49,50 @@ namespace Smithers.Worker.Jobs.Evaluations
             {
                 var plainBody = GetPlainTextBody();
                 var htmlBody = GetHtmlBody();
-                
+
+                //Setup sendGrid info, so we only look it up once per execution call
+                _sendGridUserName = CloudConfigurationManager.GetSetting("ace-sendgrid-username");
+                _sendGridPassword = CloudConfigurationManager.GetSetting("ace-sendgrid-pass");
+
+                foreach (var email in emailList)
+                {
+                    try
+                    {
+                        var sgMessage = SendGrid.GetInstance();
+                        var transport = SMTP.GetInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
+                        sgMessage.From = new MailAddress(SendGridFrom, "UCD Evaluations No Reply");
+
+                        sgMessage.Subject = "UC Davis Course Evaluation Notification";
+
+                        sgMessage.Html = "Email for " + email + "<br/>" + htmlBody;
+                        sgMessage.Text = plainBody;
+                        
+                        sgMessage.To = new[]
+                            {new MailAddress("srkirkland@ucdavis.edu"), new MailAddress("jsylvestre@ucdavis.edu")};
+                        
+                        //sgMessage.To = new MailAddress[] {new MailAddress(email)};
+
+                        transport.Deliver(sgMessage);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(string.Format("Failed sending to {0}", email), ex);
+                    }
+                }
+            }
+        }
+
+        public void SendWithMailtrap()
+        {
+            _connectionString = CloudConfigurationManager.GetSetting("ace-connection");
+
+            var emailList = GetEmailList();
+
+            if (emailList.Any())
+            {
+                var plainBody = GetPlainTextBody();
+                var htmlBody = GetHtmlBody();
+
                 using (var smtpClient = new SmtpClient("mailtrap.io", 2525))
                 {
                     smtpClient.UseDefaultCredentials = false;
@@ -60,11 +103,11 @@ namespace Smithers.Worker.Jobs.Evaluations
                         try
                         {
                             var message = new MailMessage
-                                {
-                                    From = new MailAddress(SendGridFrom),
-                                    Subject = "UC Davis Course Evaluation Notification",
-                                    Body = plainBody
-                                };
+                            {
+                                From = new MailAddress(SendGridFrom),
+                                Subject = "UC Davis Course Evaluation Notification",
+                                Body = plainBody
+                            };
 
                             message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(htmlBody, null, MediaTypeNames.Text.Html));
                             message.To.Add("fake" + email);
@@ -76,7 +119,7 @@ namespace Smithers.Worker.Jobs.Evaluations
                             Logger.ErrorFormat("Couldn't send email to {0}", exception, email);
                         }
                     }
-                }        
+                }
             }
         }
 
@@ -99,48 +142,6 @@ namespace Smithers.Worker.Jobs.Evaluations
                     Logger.Error("Didn't work", ex);
                 }
             }            
-        }
-
-        public void SendWithSendgrid()
-        {
-            var sendEmail = "Yes"; //CloudConfigurationManager.GetSetting("opp-send-email");
-
-            //Don't execute unless email is turned on
-            if (!string.Equals(sendEmail, "Yes", StringComparison.InvariantCultureIgnoreCase)) return;
-
-            //Setup sendGrid info, so we only look it up once per execution call
-            _sendGridUserName = "azure_ed741bc49fa79b0d32c8d660fb015d3a@azure.com";
-            _sendGridPassword = "[]";
-
-            //var studentsToEmail = EmailList();
-
-            //if (studentsToEmail.Length > 0)
-            //{
-
-            //}
-
-            var sgMessage = SendGrid.GetInstance();
-            var transport = SMTP.GetInstance(new NetworkCredential(_sendGridUserName, _sendGridPassword));
-            sgMessage.From = new MailAddress(SendGridFrom, "UCD Evaluations No Reply");
-
-            sgMessage.Subject = "UC Davis Course Evaluation Notification";
-
-            sgMessage.Html = string.Format("<a href=\"{0}\">{0}</a>", "https://eval.ucdavis.edu");
-            sgMessage.Text = GetPlainTextBody();
-
-            for (int i = 0; i < 1000; i++)
-            {
-                try
-                {
-                    sgMessage.To = new[] {new MailAddress(string.Format("student{0}@mailinator.com", i))};
-
-                    transport.Deliver(sgMessage);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error(string.Format("Failed sending to {0}", "fakeemail@mailinator.com"), ex);
-                }
-            }
         }
 
         public string[] GetEmailList()

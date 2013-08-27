@@ -27,6 +27,8 @@
       <Setting name="opp-pop-user-name" />
       <Setting name="opp-pop-password" />
       <Setting name="ace-connection" />
+      <Setting name="ace-sendgrid-username" />
+      <Setting name="ace-sendgrid-password" />
     </ConfigurationSettings>
     <Runtime executionContext="elevated">
     </Runtime>

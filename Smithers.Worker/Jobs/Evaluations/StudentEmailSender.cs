@@ -64,7 +64,7 @@ namespace Smithers.Worker.Jobs.Evaluations
 
                         sgMessage.Subject = "UC Davis Course Evaluation Notification";
 
-                        sgMessage.Html = "Email for " + email + "<br/>" + htmlBody;
+                        sgMessage.Html = "Email for " + email + "<br/>" + htmlBody; //sgMessage.Html = htmlBody;
                         sgMessage.Text = plainBody;
                         
                         sgMessage.To = new[]
@@ -76,7 +76,7 @@ namespace Smithers.Worker.Jobs.Evaluations
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error(string.Format("Failed sending to {0}", email), ex);
+                        Logger.Error(string.Format("Failed sending to {0}", "fake" + email), ex);
                     }
                 }
             }

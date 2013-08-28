@@ -52,7 +52,7 @@ namespace Smithers.Worker.Jobs.Evaluations
 
                 //Setup sendGrid info, so we only look it up once per execution call
                 _sendGridUserName = CloudConfigurationManager.GetSetting("ace-sendgrid-username");
-                _sendGridPassword = CloudConfigurationManager.GetSetting("ace-sendgrid-pass");
+                _sendGridPassword = CloudConfigurationManager.GetSetting("ace-sendgrid-password");
 
                 foreach (var email in emailList)
                 {

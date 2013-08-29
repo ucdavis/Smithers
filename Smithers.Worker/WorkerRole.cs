@@ -34,10 +34,12 @@ namespace Smithers.Worker
                 DatabaseBackup.Schedule();
                 EmailNotificationSender.Schedule();
                 ReadEmailForAttachments.Schedule();
+
+                //Evaluations
+                StudentEmailSender.Schedule();
             }
             else //local debugging
             {
-                //StudentEmailSender.Schedule();
                 SampleJob.Schedule();
             }
 

@@ -32,9 +32,11 @@ namespace Smithers.Worker
                     var certPath = Path.Combine(Environment.GetEnvironmentVariable("RoleRoot") + @"\",
                                                 @"approot\smithersbot.ucdavis.edu.cer");
 
+                    var cert = new X509Certificate(certPath, CloudConfigurationManager.GetSetting("certificate-key"));
+                    
                     using (var client = new SmtpClient("bulkmail-dev.ucdavis.edu") {UseDefaultCredentials = false})
                     {
-                        client.ClientCertificates.Add(new X509Certificate(certPath, "[]"));
+                        client.ClientCertificates.Add(cert);
                         client.EnableSsl = true;
                         client.Port = 587;
 
@@ -46,7 +48,8 @@ namespace Smithers.Worker
                         }
                         catch (Exception ex)
                         {
-                            return string.Format("Email failed because: {0}", ex.Message);
+                            return string.Format("Email failed because: {0}, with certificate subject {1}", ex.Message,
+                                                 cert.Subject);
                         }
                     }
                 };

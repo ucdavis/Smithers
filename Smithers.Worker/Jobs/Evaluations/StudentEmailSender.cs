@@ -64,19 +64,16 @@ namespace Smithers.Worker.Jobs.Evaluations
 
                         sgMessage.Subject = "UC Davis Course Evaluation Notification";
 
-                        sgMessage.Html = "Email for " + email + "<br/>" + htmlBody; //sgMessage.Html = htmlBody;
+                        sgMessage.Html = htmlBody;
                         sgMessage.Text = plainBody;
                         
-                        sgMessage.To = new[]
-                            {new MailAddress("srkirkland@ucdavis.edu"), new MailAddress("jsylvestre@ucdavis.edu")};
-                        
-                        //sgMessage.To = new MailAddress[] {new MailAddress(email)};
+                        sgMessage.To = new[] {new MailAddress(email)};
 
                         transport.Deliver(sgMessage);
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error(string.Format("Failed sending to {0}", "fake" + email), ex);
+                        Logger.LogCustomError(ex, string.Format("ACE Emailing for {0}", email));
                     }
                 }
             }

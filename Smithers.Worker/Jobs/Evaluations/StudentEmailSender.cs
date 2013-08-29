@@ -79,68 +79,6 @@ namespace Smithers.Worker.Jobs.Evaluations
             }
         }
 
-        public void SendWithMailtrap()
-        {
-            _connectionString = CloudConfigurationManager.GetSetting("ace-connection");
-
-            var emailList = GetEmailList();
-
-            if (emailList.Any())
-            {
-                var plainBody = GetPlainTextBody();
-                var htmlBody = GetHtmlBody();
-
-                using (var smtpClient = new SmtpClient("mailtrap.io", 2525))
-                {
-                    smtpClient.UseDefaultCredentials = false;
-                    smtpClient.Credentials = new NetworkCredential("evaluations-599e350d576fda8b", "5c9eb64e1d499ff8");
-
-                    foreach (var email in emailList)
-                    {
-                        try
-                        {
-                            var message = new MailMessage
-                            {
-                                From = new MailAddress(SendGridFrom),
-                                Subject = "UC Davis Course Evaluation Notification",
-                                Body = plainBody
-                            };
-
-                            message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(htmlBody, null, MediaTypeNames.Text.Html));
-                            message.To.Add("fake" + email);
-
-                            smtpClient.Send(message);
-                        }
-                        catch (Exception exception)
-                        {
-                            Logger.ErrorFormat("Couldn't send email to {0}", exception, email);
-                        }
-                    }
-                }
-            }
-        }
-
-        public void SendWithBulkmail()
-        {
-            var certPath = Path.Combine(Environment.GetEnvironmentVariable("RoleRoot") + @"\", @"approot\smithersbot.ucdavis.edu.cer");
-
-            using (var client = new SmtpClient("bulkmail-dev.ucdavis.edu") { UseDefaultCredentials = false })
-            {
-                client.ClientCertificates.Add(new X509Certificate(certPath, "[]"));
-                client.EnableSsl = true;
-                client.Port = 587;
-
-                try
-                {
-                    client.Send("srkirkland@ucdavis.edu", "srkirkland@ucdavis.edu", "bulkmail sample", "sample email");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("Didn't work", ex);
-                }
-            }            
-        }
-
         public string[] GetEmailList()
         {
             string[] studentEmailsWithOpenEvaluations;

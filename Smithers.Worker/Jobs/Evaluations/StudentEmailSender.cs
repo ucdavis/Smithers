@@ -1,10 +1,7 @@
 using System;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using System.Net.Mime;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Dapper;
 using Microsoft.Practices.EnterpriseLibrary.WindowsAzure.TransientFaultHandling.SqlAzure;

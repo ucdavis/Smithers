@@ -63,7 +63,7 @@ namespace Smithers.Worker.Jobs.Evaluations
 
                         sgMessage.Html = htmlBody;
                         sgMessage.Text = plainBody;
-                        
+
                         sgMessage.To = new[] {new MailAddress(email)};
 
                         transport.Deliver(sgMessage);
@@ -93,7 +93,8 @@ inner join students s on s.ClassTimeId = cte.ClassTimeId
 left join CompletedEvaluations ce on ce.ClassTimeEvaluationId = cte.id
 where [start] < GETUTCDATE() 
 	AND [end] > GETUTCDATE()
-	AND ce.Completed is null"
+	AND ce.Completed is null
+    AND s.Email is not null"
                         ).ToArray();
             }
 

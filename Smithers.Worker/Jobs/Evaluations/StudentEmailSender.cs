@@ -90,7 +90,7 @@ namespace Smithers.Worker.Jobs.Evaluations
                     connection.Query<string>(@"
 select distinct s.Email from ClassTimeEvaluations cte
 inner join students s on s.ClassTimeId = cte.ClassTimeId
-left join CompletedEvaluations ce on ce.ClassTimeEvaluationId = cte.id
+left join CompletedEvaluations ce on (ce.ClassTimeEvaluationId = cte.id AND ce.StudentId = s.Id)
 where [start] < GETUTCDATE() 
 	AND [end] > GETUTCDATE()
 	AND ce.Completed is null

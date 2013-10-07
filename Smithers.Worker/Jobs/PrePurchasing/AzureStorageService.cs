@@ -148,8 +148,11 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             // make a copy that we can alter
             CreateCopy(srcDatabase, tmpDatabase, masterDbConnectionString);
 
-            // remove the datasync tables/triggers/sprocs
-            RemoveDataSync(tmpDbConnectionString);
+            // 2013-10-07 by kjt: Just disable the triggers instead of removing 
+            // all the DataSync triggers and components:
+            DisableTriggers(tmpDbConnectionString);
+            //// remove the datasync tables/triggers/sprocs
+            //RemoveDataSync(tmpDbConnectionString);
 
             // export the copy to blob storage
             var reqId = Backup(tmpDatabase, null, out filename);
@@ -230,6 +233,32 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                     connection.Close();
                 }
             } while (status != "ONLINE");
+        }
+
+        /// <summary>
+        /// Disables ALL database triggers period.
+        /// </summary>
+        /// <remarks>
+        /// Disabling these allows the srcDatabase to be restored without errors.
+        /// Once restored, ALL database triggers can be re-enabled without incident by issuing the 
+        /// command from an AZURE query window:
+        /// ENABLE TRIGGER ALL ON DATABASE
+        /// </remarks>
+        /// <param name="tmpDbConnectionString"></param>
+        private void DisableTriggers(string tmpDbConnectionString)
+        {
+            // Disable ALL triggers:
+            using (var connection = new SqlConnection(tmpDbConnectionString))
+            {
+               
+                connection.Open();
+
+                var cmd = new SqlCommand("DISABLE TRIGGER ALL ON DATABASE", connection);
+
+                cmd.ExecuteNonQuery();
+
+                connection.Close();
+            }
         }
 
         /// <summary>

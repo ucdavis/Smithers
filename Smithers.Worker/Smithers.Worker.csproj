@@ -135,6 +135,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Jobs\ErrorTracking.cs" />
+    <Compile Include="Jobs\Evaluations\ReleaseEvaluations.cs" />
     <Compile Include="Jobs\Evaluations\StudentEmailSender.cs" />
     <Compile Include="Jobs\Job.cs" />
     <Compile Include="Jobs\JobExtensions.cs" />

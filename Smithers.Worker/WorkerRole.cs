@@ -40,6 +40,7 @@ namespace Smithers.Worker
             }
             else //local debugging
             {
+                ReleaseEvaluations.Schedule();
                 SampleJob.Schedule();
             }
 

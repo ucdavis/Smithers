@@ -9,6 +9,7 @@ using Microsoft.WindowsAzure;
 using Newtonsoft.Json;
 using Quartz;
 using Quartz.Impl;
+using System.Threading.Tasks;
 
 namespace Smithers.Worker.Jobs.Evaluations
 {
@@ -42,9 +43,10 @@ namespace Smithers.Worker.Jobs.Evaluations
         public override void ExecuteJob(IJobExecutionContext context)
         {
             _connectionString = CloudConfigurationManager.GetSetting("ace-connection");
-            _serviceKey = "KEY";
+            _serviceKey = "TmB1nCT5iQhftXmRI91xw9x4pmvonHP3mxCMITnlVhej7e2LoeJGwzJSg5940bV";
 
             TermSection[] termSections;
+            var serviceCalls = new List<Task<string>>();
             /*
             //Setup connection string
             var connection = new ReliableSqlConnection(_connectionString);
@@ -81,15 +83,34 @@ namespace Smithers.Worker.Jobs.Evaluations
                                                 term.ToString(CultureInfo.InvariantCulture),
                                                 string.Join("&crns=", crns), _serviceKey);
                         
-                        var jsonTask = webClient.DownloadStringTaskAsync(url);
-                        jsonTask.Wait();
+                        serviceCalls.Add(webClient.DownloadStringTaskAsync(url));
+                    }
+                }
 
-                        dynamic sectionGrades = JsonConvert.DeserializeObject(jsonTask.Result);
-                        var grades = sectionGrades.Count;
+                //now we have all the service calls generated, wait for them to finish
+                Task.WhenAll(serviceCalls).Wait();
+
+                foreach (var serviceCall in serviceCalls)
+                {
+                    var result = JsonConvert.DeserializeObject<SectionGrade[]>(serviceCall.Result);
+                    var releaseable = result.Where(x => x.Gradable == "Y" && x.GradesOutstandingCount == 0);
+
+                    //Release each section with is gradable and has no more outstanding grades
+                    foreach (var releaseSection in releaseable)
+                    {
+                        //TODO: Call some service to release grades
                     }
                 }
             }
         }
+    }
+
+    public class SectionGrade
+    {
+        public string TermCode { get; set; }
+        public string Crn { get; set; }
+        public int GradesOutstandingCount { get; set; }
+        public string Gradable { get; set; }
     }
     
     public class TermSection

@@ -37,10 +37,10 @@ namespace Smithers.Worker
 
                 //Evaluations
                 StudentEmailSender.Schedule();
+                ReleaseEvaluations.Schedule();
             }
             else //local debugging
             {
-                ReleaseEvaluations.Schedule();
                 SampleJob.Schedule();
             }
 

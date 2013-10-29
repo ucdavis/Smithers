@@ -30,6 +30,8 @@
       <Setting name="ace-sendgrid-username" />
       <Setting name="ace-sendgrid-password" />
       <Setting name="certificate-key" />
+      <Setting name="ace-service-key" />
+      <Setting name="ace-service-url" />
     </ConfigurationSettings>
     <Runtime executionContext="elevated">
     </Runtime>

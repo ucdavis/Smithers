@@ -99,6 +99,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Nancy.Hosting.Self.0.18.0\lib\net40\Nancy.Hosting.Self.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.5.0.6\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="OpenPop">
       <HintPath>..\packages\OpenPop.NET.2.0.4.369\lib\net20\OpenPop.dll</HintPath>
     </Reference>
@@ -135,6 +138,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Jobs\ErrorTracking.cs" />
+    <Compile Include="Jobs\Evaluations\ReleaseEvaluations.cs" />
     <Compile Include="Jobs\Evaluations\StudentEmailSender.cs" />
     <Compile Include="Jobs\Job.cs" />
     <Compile Include="Jobs\JobExtensions.cs" />

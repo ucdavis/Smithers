@@ -54,7 +54,7 @@
                             <option>INFO</option>
                             <option>DEBUG</option>
                         </select> level 
-                        log events from the last <input type='number' id="hours" name='hours' step='1' min='1' value='@Model.Level' class='input-small' />
+                        log events from the last <input type='number' id="hours" name='hours' step='1' min='1' value='@Model.Hours' class='input-small' /> hours.  
                         <button type="submit" class='btn btn-primary'>Go!</button>
                     </form>
                 </div>
@@ -121,6 +121,7 @@
                 });
 
                 CreateFilters();
+                SelectLoggingLevel();
             });
 
             function CreateFilters() {
@@ -153,6 +154,11 @@
 
                     MyApp.oTable.fnFilter(job, 1);
                 });
+            }
+
+            function SelectLoggingLevel() {
+                var level = '@Model.Level';
+                $('#level').val(level);
             }
         </script>
     </body>

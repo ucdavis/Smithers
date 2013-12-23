@@ -21,7 +21,6 @@ namespace Smithers.Worker
     {
         private const string CasUrl = "https://cas.ucdavis.edu:8443/cas/";
         private const string UserTokenKey = "smithers.userToken";
-        private const int DefaultTakeCount = 100;
 
         public LogViewerModule()
         {
@@ -101,14 +100,14 @@ namespace Smithers.Worker
                     CloudTable table = tableClient.GetTableReference("LogEntries");
 
                     var filterLevel = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, Request.Query.level.HasValue ? Request.Query.level.Value as string : "ERROR");
-                    var filterCurrent = TableQuery.GenerateFilterConditionForDate("Timestamp", QueryComparisons.GreaterThanOrEqual, DateTime.UtcNow.AddDays(-1));
+                    var filterCurrent = TableQuery.GenerateFilterConditionForDate("Timestamp",
+                                                                                  QueryComparisons.GreaterThanOrEqual,
+                                                                                  DateTime.UtcNow.AddHours(-1 * (int)(Request.Query.hours.HasValue ? int.Parse(Request.Query.hours.Value) : 24))
+                                                                                  );
 
                     var query = new TableQuery().Where(TableQuery.CombineFilters(filterLevel, TableOperators.And, filterCurrent));
-
-                    var recordCountToTake = Request.Query.more.HasValue ? DefaultTakeCount*5 : DefaultTakeCount;
-                    query = query.Take(recordCountToTake);
                     
-                    var res = table.ExecuteQuery(query).Take(recordCountToTake);
+                    var res = table.ExecuteQuery(query);
                     
                     dynamic model = new ExpandoObject();
                     model.Events = res.Select(

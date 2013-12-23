@@ -100,26 +100,15 @@ namespace Smithers.Worker
                     CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
                     CloudTable table = tableClient.GetTableReference("LogEntries");
 
-                    var now = DateTime.Now;
-                    var filterCurrent = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal,
-                                                                           string.Format("{0}-{1:D2}", now.Year,
-                                                                                         now.Month));
+                    var filterLevel = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "DEBUG");
+                    var filterCurrent = TableQuery.GenerateFilterConditionForDate("Timestamp", QueryComparisons.GreaterThanOrEqual, DateTime.UtcNow.AddDays(-1));
 
-                    var query = new TableQuery().Where(filterCurrent);
+                    var query = new TableQuery().Where(TableQuery.CombineFilters(filterLevel, TableOperators.And, filterCurrent));
 
-                    var limitResults = Request.Query.more.HasValue == false;
-
-                    if (limitResults)
-                    {
-                        query = query.Take(DefaultTakeCount); //limit the results by default
-                    }
+                    var recordCountToTake = Request.Query.more.HasValue ? DefaultTakeCount*5 : DefaultTakeCount;
+                    query = query.Take(recordCountToTake);
                     
-                    var res = table.ExecuteQuery(query);
-
-                    if (limitResults) //We also have to stop the returned query from pulling >1 page if we are limiting results
-                    {
-                        res = res.Take(DefaultTakeCount);
-                    }
+                    var res = table.ExecuteQuery(query).Take(recordCountToTake);
                     
                     dynamic model = new ExpandoObject();
                     model.Events = res.Select(
@@ -128,7 +117,7 @@ namespace Smithers.Worker
                                 LoggerName = logEvent.Properties["LoggerName"].StringValue,
                                 Timestamp = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(logEvent.Timestamp, "Pacific Standard Time").ToString("MM/dd/yy H:mm:ss"),
                                 Message = logEvent.Properties["Message"].StringValue,
-                                Level = logEvent.Properties["Level"].StringValue,
+                                Level = logEvent.Properties["PartitionKey"].StringValue,
                             }).ToList();
 
                     return View["logviewer.html", model];

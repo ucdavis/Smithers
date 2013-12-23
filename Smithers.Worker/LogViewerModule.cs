@@ -93,17 +93,19 @@ namespace Smithers.Worker
                         return Nancy.HttpStatusCode.Forbidden;
                     }
 
+                    int hours = Request.Query.hours.HasValue ? int.Parse(Request.Query.hours.Value) : 24;
+                    string logLevel = Request.Query.level.HasValue ? Request.Query.level.Value as string : "ERROR";
+
                     CloudStorageAccount storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("SmithersStorage"));
 
                     // Create the table client.
                     CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
                     CloudTable table = tableClient.GetTableReference("LogEntries");
 
-                    var filterLevel = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, Request.Query.level.HasValue ? Request.Query.level.Value as string : "ERROR");
+                    var filterLevel = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, logLevel);
                     var filterCurrent = TableQuery.GenerateFilterConditionForDate("Timestamp",
                                                                                   QueryComparisons.GreaterThanOrEqual,
-                                                                                  DateTime.UtcNow.AddHours(-1 * (int)(Request.Query.hours.HasValue ? int.Parse(Request.Query.hours.Value) : 24))
-                                                                                  );
+                                                                                  DateTime.UtcNow.AddHours(-1 * hours));
 
                     var query = new TableQuery().Where(TableQuery.CombineFilters(filterLevel, TableOperators.And, filterCurrent));
                     
@@ -118,7 +120,9 @@ namespace Smithers.Worker
                                 Message = logEvent.Properties["Message"].StringValue,
                                 Level = logEvent.PartitionKey,
                             }).ToList();
-
+                    model.Hours = hours;
+                    model.Level = logLevel;
+                    
                     return View["logviewer.html", model];
                 };
         }

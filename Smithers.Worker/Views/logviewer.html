@@ -48,8 +48,13 @@
             <div class="row-fluid">
                 <div class="span12 well well-small">
                     <form method="GET" action="/" class="form-inline">
-                        Show only <select id="level" name="level" class="input-medium"><option>ERROR</option><option>INFO</option><option>DEBUG</option></select> level 
-                        log events from the last <input type='number' id="hours" name='hours' step='1' min='1' value='24' class='input-small' />
+                        Show only 
+                        <select id="level" name="level" class="input-medium">
+                            <option>ERROR</option>
+                            <option>INFO</option>
+                            <option>DEBUG</option>
+                        </select> level 
+                        log events from the last <input type='number' id="hours" name='hours' step='1' min='1' value='@Model.Level' class='input-small' />
                         <button type="submit" class='btn btn-primary'>Go!</button>
                     </form>
                 </div>

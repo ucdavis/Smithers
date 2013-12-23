@@ -17,7 +17,7 @@ namespace Smithers.Worker.Jobs
 
             //run trigger every hour after inital 2 second delay
             var trigger = TriggerBuilder.Create().ForJob(job)
-                            .WithSchedule(SimpleScheduleBuilder.RepeatHourlyForever(1))
+                            .WithSchedule(SimpleScheduleBuilder.RepeatMinutelyForever(2))
                             .StartAt(DateTimeOffset.Now.AddSeconds(2))
                             .Build();
 

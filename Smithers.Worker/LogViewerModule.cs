@@ -100,7 +100,7 @@ namespace Smithers.Worker
                     CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
                     CloudTable table = tableClient.GetTableReference("LogEntries");
 
-                    var filterLevel = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "DEBUG");
+                    var filterLevel = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, Request.Query.level.HasValue ? Request.Query.level.Value as string : "INFO");
                     var filterCurrent = TableQuery.GenerateFilterConditionForDate("Timestamp", QueryComparisons.GreaterThanOrEqual, DateTime.UtcNow.AddDays(-1));
 
                     var query = new TableQuery().Where(TableQuery.CombineFilters(filterLevel, TableOperators.And, filterCurrent));
@@ -117,7 +117,7 @@ namespace Smithers.Worker
                                 LoggerName = logEvent.Properties["LoggerName"].StringValue,
                                 Timestamp = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(logEvent.Timestamp, "Pacific Standard Time").ToString("MM/dd/yy H:mm:ss"),
                                 Message = logEvent.Properties["Message"].StringValue,
-                                Level = logEvent.Properties["PartitionKey"].StringValue,
+                                Level = logEvent.PartitionKey,
                             }).ToList();
 
                     return View["logviewer.html", model];

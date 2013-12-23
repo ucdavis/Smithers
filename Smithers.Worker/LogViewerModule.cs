@@ -100,7 +100,7 @@ namespace Smithers.Worker
                     CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
                     CloudTable table = tableClient.GetTableReference("LogEntries");
 
-                    var filterLevel = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, Request.Query.level.HasValue ? Request.Query.level.Value as string : "INFO");
+                    var filterLevel = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, Request.Query.level.HasValue ? Request.Query.level.Value as string : "ERROR");
                     var filterCurrent = TableQuery.GenerateFilterConditionForDate("Timestamp", QueryComparisons.GreaterThanOrEqual, DateTime.UtcNow.AddDays(-1));
 
                     var query = new TableQuery().Where(TableQuery.CombineFilters(filterLevel, TableOperators.And, filterCurrent));

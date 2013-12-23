@@ -21,16 +21,14 @@ namespace Smithers.AzureLogAppender
 {
     public sealed class LogEntry : TableEntity
     {
-        public LogEntry()
+        public LogEntry(string level)
         {
-            var now = DateTime.UtcNow;
-            PartitionKey = string.Format("{0:yyyy-MM}", now);
-            RowKey = string.Format("{0:D19}", DateTime.MaxValue.Ticks - DateTime.UtcNow.Ticks);
+            PartitionKey = level;
+            RowKey = Guid.NewGuid().ToString();
         }
 
         #region Table columns
         public string Message { get; set; }
-        public string Level { get; set; }
         public string LoggerName { get; set; }
         public string Domain { get; set; }
         public string ThreadName { get; set; }

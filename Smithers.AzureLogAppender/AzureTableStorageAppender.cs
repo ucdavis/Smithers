@@ -34,13 +34,12 @@ namespace Smithers.AzureLogAppender
         {
             try
             {
-                var log = new LogEntry
+                var log = new LogEntry(loggingEvent.Level.Name)
                     {
                         RoleInstance = RoleEnvironment.CurrentRoleInstance.Id,
                         DeploymentId = RoleEnvironment.DeploymentId,
                         Timestamp = loggingEvent.TimeStamp,
                         Message = loggingEvent.RenderedMessage,
-                        Level = loggingEvent.Level.Name,
                         LoggerName = loggingEvent.LoggerName,
                         Domain = loggingEvent.Domain,
                         ThreadName = loggingEvent.ThreadName,

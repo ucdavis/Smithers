@@ -33,7 +33,7 @@ namespace Smithers.Worker
 
                     var cert = new X509Certificate(certPath, CloudConfigurationManager.GetSetting("certificate-key"));
                     
-                    using (var client = new SmtpClient("bulkmail-dev.ucdavis.edu") {UseDefaultCredentials = false})
+                    using (var client = new SmtpClient("bulkmail.ucdavis.edu") {UseDefaultCredentials = false})
                     {
                         client.ClientCertificates.Add(cert);
                         client.EnableSsl = true;

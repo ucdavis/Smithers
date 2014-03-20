@@ -51,6 +51,9 @@ namespace Smithers.Worker.Jobs.Evaluations
                 _sendGridUserName = CloudConfigurationManager.GetSetting("ace-sendgrid-username");
                 _sendGridPassword = CloudConfigurationManager.GetSetting("ace-sendgrid-password");
 
+                var successfulSends = 0;
+                var unsucessfulSends = 0;
+
                 foreach (var email in emailList)
                 {
                     try
@@ -67,12 +70,17 @@ namespace Smithers.Worker.Jobs.Evaluations
                         sgMessage.To = new[] {new MailAddress(email)};
 
                         transport.Deliver(sgMessage);
+                        successfulSends++;
                     }
                     catch (Exception ex)
                     {
                         Logger.LogCustomError(ex, string.Format("ACE Emailing for {0}", email));
+                        unsucessfulSends++;
                     }
                 }
+
+                Logger.InfoFormat("ACE email send completed for {0} email addresses. {1} sends sucessful, {2} failed",
+                                  emailList.Length, successfulSends, unsucessfulSends);
             }
         }
 

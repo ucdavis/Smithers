@@ -29,7 +29,6 @@
                     <div class="nav-collapse collapse">
                         <ul class="nav">
                             <li class="active"><a href="/">Home</a></li>
-                            <li><a href="/?more=1">View More Entries</a></li>
                             <li><a href="#about">About</a></li>                            
                         </ul>
                     </div><!--/.nav-collapse -->
@@ -43,6 +42,21 @@
             <div class="hero-unit">
                 <h1>Worker For Scheduled Tasks</h1>
                 <p><a href="https://github.com/ucdavis/Smithers">Helpful Worker Service For Accomplishing Scheduled and Repetitive Tasks</a></p>
+            </div>
+            
+            <div class="row-fluid">
+                <div class="span12 well well-small">
+                    <form method="GET" action="/" class="form-inline">
+                        Show only 
+                        <select id="level" name="level" class="input-medium">
+                            <option>ERROR</option>
+                            <option>INFO</option>
+                            <option>DEBUG</option>
+                        </select> level 
+                        log events from the last <input type='number' id="hours" name='hours' step='1' min='1' value='@Model.Hours' class='input-small' /> hours.  
+                        <button type="submit" class='btn btn-primary'>Go!</button>
+                    </form>
+                </div>
             </div>
             
             <!-- Example row of columns -->
@@ -106,6 +120,7 @@
                 });
 
                 CreateFilters();
+                SelectLoggingLevel();
             });
 
             function CreateFilters() {
@@ -138,6 +153,11 @@
 
                     MyApp.oTable.fnFilter(job, 1);
                 });
+            }
+
+            function SelectLoggingLevel() {
+                var level = '@Model.Level';
+                $('#level').val(level);
             }
         </script>
     </body>

@@ -98,10 +98,9 @@ namespace Smithers.Worker
         public override bool OnStart()
         {
             _roleLogger = LogManager.GetCurrentClassLogger();
-
             // Set the maximum number of concurrent connections 
             ServicePointManager.DefaultConnectionLimit = 12;
-
+            
             // For information on handling configuration changes
             // see the MSDN topic at http://go.microsoft.com/fwlink/?LinkId=166357.
 

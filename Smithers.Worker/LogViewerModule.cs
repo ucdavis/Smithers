@@ -21,7 +21,6 @@ namespace Smithers.Worker
     {
         private const string CasUrl = "https://cas.ucdavis.edu:8443/cas/";
         private const string UserTokenKey = "smithers.userToken";
-        private const int DefaultTakeCount = 100;
 
         public LogViewerModule()
         {
@@ -34,7 +33,7 @@ namespace Smithers.Worker
 
                     var cert = new X509Certificate(certPath, CloudConfigurationManager.GetSetting("certificate-key"));
                     
-                    using (var client = new SmtpClient("bulkmail-dev.ucdavis.edu") {UseDefaultCredentials = false})
+                    using (var client = new SmtpClient("bulkmail.ucdavis.edu") {UseDefaultCredentials = false})
                     {
                         client.ClientCertificates.Add(cert);
                         client.EnableSsl = true;
@@ -94,32 +93,23 @@ namespace Smithers.Worker
                         return Nancy.HttpStatusCode.Forbidden;
                     }
 
+                    int hours = Request.Query.hours.HasValue ? int.Parse(Request.Query.hours.Value) : 24;
+                    string logLevel = Request.Query.level.HasValue ? Request.Query.level.Value as string : "ERROR";
+
                     CloudStorageAccount storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("SmithersStorage"));
 
                     // Create the table client.
                     CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
                     CloudTable table = tableClient.GetTableReference("LogEntries");
 
-                    var now = DateTime.Now;
-                    var filterCurrent = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal,
-                                                                           string.Format("{0}-{1:D2}", now.Year,
-                                                                                         now.Month));
+                    var filterLevel = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, logLevel);
+                    var filterCurrent = TableQuery.GenerateFilterConditionForDate("Timestamp",
+                                                                                  QueryComparisons.GreaterThanOrEqual,
+                                                                                  DateTime.UtcNow.AddHours(-1 * hours));
 
-                    var query = new TableQuery().Where(filterCurrent);
-
-                    var limitResults = Request.Query.more.HasValue == false;
-
-                    if (limitResults)
-                    {
-                        query = query.Take(DefaultTakeCount); //limit the results by default
-                    }
+                    var query = new TableQuery().Where(TableQuery.CombineFilters(filterLevel, TableOperators.And, filterCurrent));
                     
                     var res = table.ExecuteQuery(query);
-
-                    if (limitResults) //We also have to stop the returned query from pulling >1 page if we are limiting results
-                    {
-                        res = res.Take(DefaultTakeCount);
-                    }
                     
                     dynamic model = new ExpandoObject();
                     model.Events = res.Select(
@@ -128,9 +118,11 @@ namespace Smithers.Worker
                                 LoggerName = logEvent.Properties["LoggerName"].StringValue,
                                 Timestamp = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(logEvent.Timestamp, "Pacific Standard Time").ToString("MM/dd/yy H:mm:ss"),
                                 Message = logEvent.Properties["Message"].StringValue,
-                                Level = logEvent.Properties["Level"].StringValue,
+                                Level = logEvent.PartitionKey,
                             }).ToList();
-
+                    model.Hours = hours;
+                    model.Level = logLevel;
+                    
                     return View["logviewer.html", model];
                 };
         }

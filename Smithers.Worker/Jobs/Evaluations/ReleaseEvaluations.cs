@@ -16,8 +16,8 @@ namespace Smithers.Worker.Jobs.Evaluations
             // create job
             var jobDetails = JobBuilder.Create<ReleaseEvaluations>().Build();
 
-            //run daily trigger after inital 30 second delay to give priority to warmup
-            var dailyTrigger = TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(2, 30).InPacificTimeZone())
+            //run daily trigger after initial 30 second delay to give priority to warmup
+            var dailyTrigger = TriggerBuilder.Create().ForJob(jobDetails).WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(4, 00).InPacificTimeZone())
                                              .StartAt(DateTimeOffset.Now.AddSeconds(30))
                                              .Build();
             

@@ -191,7 +191,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         var cleanUser = emailQueue.UserId == null ? null : ((string) emailQueue.UserId).Trim();
 
                         //TODO: Can move to single update outside of foreach
-                        connection.Execute("update EmailQueueV2 set Pending = 0, DateTimeSent = @now UserId = @cleanuser where id = @id",
+                        connection.Execute("update EmailQueueV2 set Pending = 0, DateTimeSent = @now, UserId = @cleanuser where id = @id",
                                            new {now = DateTime.Now.InPacificTimeZone(),cleanuser = cleanUser , id = emailQueue.Id}, ts);
                     }
 

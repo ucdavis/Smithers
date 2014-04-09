@@ -83,7 +83,7 @@ namespace Smithers.Worker.Jobs.PrePurchasing
             using (connection)
             {
                 List<dynamic> pending = connection.Query(
-                    "select Id, UserId, Email, OrderId, DateTimeCreated, Action, Details from EmailQueueV2 where Pending = 1 and NotificationType = @notificationType",
+                    "select Id, rtrim(ltrim([UserId])) as UserId, Email, OrderId, DateTimeCreated, Action, Details from EmailQueueV2 where Pending = 1 and NotificationType = @notificationType",
                     new {notificationType = notificationType.ToString()}).ToList();
 
                 var pendingUserIds = pending.Where(x => x.UserId != null).Select(x => x.UserId).Distinct();

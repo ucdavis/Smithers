@@ -187,10 +187,12 @@ namespace Smithers.Worker.Jobs.PrePurchasing
                         message.Append(string.Format("<td style=\"width: 137px;\">{0}</td>", emailQueue.Action));
                         message.Append(string.Format("<td >{0}</td>", emailQueue.Details ?? string.Empty));
                         message.Append("</tr>");
-                        
+
+                        var cleanUser = emailQueue.UserId == null ? null : ((string) emailQueue.UserId).Trim();
+
                         //TODO: Can move to single update outside of foreach
-                        connection.Execute("update EmailQueueV2 set Pending = 0, DateTimeSent = @now where id = @id",
-                                           new {now = DateTime.Now.InPacificTimeZone(), id = emailQueue.Id}, ts);
+                        connection.Execute("update EmailQueueV2 set Pending = 0, DateTimeSent = @now UserId = @cleanuser where id = @id",
+                                           new {now = DateTime.Now.InPacificTimeZone(),cleanuser = cleanUser , id = emailQueue.Id}, ts);
                     }
 
                     message.Append("</tbody>");
